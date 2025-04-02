@@ -1,4 +1,4 @@
-# riscv-web-compiler
+# riscv-runtime-simulator
 
 This project is a webpage which features a RISC-V compiler. As I go through, I will attempt to restrict my scope to what is useful in an educational context. That means that it will not entirely implement every part of the RISC-V ISA, but will instead focus on the most important parts for learning.
 
