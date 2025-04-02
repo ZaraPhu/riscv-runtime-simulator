@@ -7,7 +7,7 @@ Since the most current architectures are 64-bit, I will focus on that.
 The project will be written using a mix of different frontend and backend tools. I'll be experimenting with different tools and technologies as I go along, but the initial idea is to maintain some sepration of concerns by using  Bootstrap for the content/presentation layers, and TypeScript for the behaviour layer and the backend.
 
 ## NOTE ABOUT AI
-There will be numerous areas where I will be using AI for the code completion and assistant features. This means that not all parts are entirely written by may, but may be AI-generated and then modified by me. This is to speed up the development process and to learn how to use AI within my software development process.
+There will be numerous areas where I will be using AI for the code completion and assistant features. This means that not all parts are entirely written by me, but may be AI-generated and then modified by me. This is to speed up the development process and to learn how to use AI within my software development process.
 
 ## Goals
 1. Create a basic template for the content layer of the webpage to display the RISC-V assembly editor, the memory viewer, and the register viewer.
