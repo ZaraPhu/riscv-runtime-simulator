@@ -11,53 +11,50 @@ Creation Date: April 1, 2025.
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>RISC-V Runtime Simulator</title>
-        <link rel="stylesheet" href="css/bootstrap.css">
+        <link rel="stylesheet" href="css/bootstrap/bootstrap.css">
     </head>
     <body class="vw-100">
-        <header id="pg-banner" class="vw-100 h-auto">
-            <h1 id="pg-title" class="w-100 text-center py-5">
+        <header 
+            id="pg-banner"
+            class="vw-100 h-auto py-5 d-flex flex-row flex-wrap justify-content-evenly"
+        >
+            <h1 id="pg-title" class="text-center px-5">
                 RISC-V Runtime Simulator
             </h1>
+            <nav id="primary-nav" class="navbar mx-auto">
+                <button id="toggle-dark-mode" class="btn btn-primary">Toggle Dark Mode</button>
+            </nav>
         </header>
-        <main
+        <main 
             id="pg-main-content"
-            class="vw-100 d-flex flex-row justify-content-evenly"
+            class="vw-100 d-flex flex-row justify-content-center"
             style="min-height: 50vh;"
         >
-            <div class="form-floating">
-                <textarea
-                    id="assembly-editor"
-                    class="px-3 form-control"
-                    placeholder="Enter your assembly code here..."
-                    style="min-height: 500px;"
-                ></textarea>
-                <label for="assembly-editor">Assembly Editor</label>
-            </div>
             <ul
                 id="register-list"
-                class="mx-auto px-3 d-flex flex-column justify-content-evenly"
+                class="list-group px-3 d-flex flex-column justify-content-evenly"
             >
-                <li>1</li>
-                <li>2</li>
-                <li>3</li>
-                <li>4</li>
-                <li>5</li>
             </ul>
-            <div id="memory-block" class="mx-auto px-3">
-                <div>1</div>
-                <div>2</div>
-                <div>3</div>
-                <div>4</div>
-                <div>5</div>
-                <div>6</div>
-                <div>7</div>
-                <div>8</div>
-                <div>9</div>
-                <div></div>
+            <div class="mx-3 d-flex flex-column justify-content-start align-items-center">
+                <div class="form-floating">
+                    <textarea
+                        id="assembly-editor"
+                        class="form-control"
+                        placeholder="Enter your assembly code here..."
+                        style="min-height: 500px;"
+                    ></textarea>
+                    <label for="assembly-editor">Assembly Editor</label>
+                </div>
+                <button id="run-code-button" class="my-3 btn btn-primary">Run Code</button>
+            </div>
+            <div id="memory-peek" class="px-5">
+                <nav id="memory-nav">
+                    <p>MEMORY PEEK TO BE IMPLEMENTED</p>
+                </nav>
             </div>
         </main>
-        <footer id="pg-footer">&copy; 2025. Zara Phukan.</footer>
-        <script src="js/bootstrap/bootstrap.js"></script>
-        <script src="js/script.js"></script>
+        <footer id="pg-footer" class="px-2">&copy; 2025. Zara Phukan.</footer>
+        <script src="js/bootstrap/bootstrap.bundle.js"></script>
+        <script src="js/page-behaviour.js"></script>
     </body>
 </html>
