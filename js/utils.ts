@@ -137,7 +137,7 @@ const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   ["JALR", J_TYPE],
 ]);
 
-const INSTRUCTION_TO_CALLABLE: ReadonlyMap<string, CallableFunction> = new Map([
+const INSTRUCTION_TO_CALLABLE: ReadonlyMap<string, Function> = new Map([
   ["ADDI", addi],
   ["SLTI", slti],
   ["SLTIU", sltiu],
@@ -146,7 +146,11 @@ const INSTRUCTION_TO_CALLABLE: ReadonlyMap<string, CallableFunction> = new Map([
   ["XORI", xori],
   ["SLLI", slli],
   ["SRLI", srli],
-  ["SRAI", srai]
+  ["SRAI", srai],
+  ["LUI", lui],
+  ["AUIPC", auipc],
+  ["ADD", add],
+  ["SUB", sub]
 ]);
 
 /*** Functions ***/
@@ -227,5 +231,44 @@ function srli(rd: string, rs1: string, imm: number): boolean {
 
 function srai(rd: string, rs1: string, imm: number): boolean { 
   console.log("Called srai function.");
+  return false;
+}
+
+function lui(rd: string, imm: number): boolean { 
+  console.log("Called lui function.");
+  return false;
+}
+
+function auipc(rd: string, imm: number): boolean { 
+  console.log("Called auipc function.");
+  return false;
+}
+
+function add(rd: string, rs1: string, rs2: string): boolean { 
+  console.log("Called the add function.");
+  return false;
+}
+
+function sub(rd: string, rs1: string, rs2: string): boolean { 
+  console.log("Called the sub function.");
+  return false;
+}
+
+function slt(rd: string, rs1: string, rs2: string): boolean { 
+  console.log("Called the slt function.");
+  return false;
+}
+function sltu(rd: string, rs1: string, rs2: string): boolean { 
+  console.log("Called the sltu function.");
+  return false;
+}
+
+function sll(rd: string, rs1: string, rs2: string): boolean { 
+  console.log("Called the sll function.");
+  return false;
+}
+
+function srl(rd: string, rs1: string, rs2: string): boolean { 
+  console.log("Called the srl function.");
   return false;
 }

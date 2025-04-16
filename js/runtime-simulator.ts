@@ -111,14 +111,28 @@ function parseInput(instructionList: string[]): ParserResult {
 }
 
 function executeInstruction(destructuredInstruction: string[]): boolean {
-  const callable: CallableFunction = INSTRUCTION_TO_CALLABLE.get(
+  const instructionType: OperandType[] = INSTRUCTION_TO_FORMAT.get(
+    destructuredInstruction[0]
+  )!;
+  const instructionCallable: CallableFunction = INSTRUCTION_TO_CALLABLE.get(
     destructuredInstruction[0],
   )!;
-  return callable(
-    destructuredInstruction[1],
-    destructuredInstruction[2],
-    destructuredInstruction[3],
-  );
+  if ((instructionType == I_TYPE) || (instructionType == R_TYPE)) {
+    return instructionCallable(
+      destructuredInstruction[1],
+      destructuredInstruction[2],
+      destructuredInstruction[3],
+    );
+  } else if ((instructionType == U_TYPE) || (instructionType == PSEUDO_TYPE)) {
+    return instructionCallable(
+      destructuredInstruction[1],
+      destructuredInstruction[2]
+    );
+  } else if (instructionType == NONE_TYPE) {
+    return instructionCallable();
+  } else { 
+    return false;
+  }
 }
 
 /*** Program Starting Point ***/
