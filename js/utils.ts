@@ -118,71 +118,21 @@ const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   ["NOP", NONE_TYPE],
   ["MV", PSEUDO_TYPE],
   ["SEQZ", PSEUDO_TYPE],
-  ["NOT", PSEUDO_TYPE]
+  ["NOT", PSEUDO_TYPE],
+  ["JAL", J_TYPE],
+  ["JALR", J_TYPE]
 ]);
-
-// instructions which use immediates
-const IMMEDIATE_INSTRUCTIONS: readonly string[] = [
-  "ADDI", // rs1 + immediate => rd
-  "SLTI", // rs1 < immediate => rd (signed)
-  "SLTIU", // rs1 < immediate => rd (unsigned)
-  "ANDI", // rs1 AND immediate => rd (bitwise)
-  "ORI", // rs1 OR immediate => rd (bitwisea)
-  "XORI", // rs1 XOR immediate => rd (bitwise)
-  "SLLI", // rs1 << immediate => rd (0 < immediate < 16, discard MSB)
-  "SLRI", // rs1 >> immediate => rd (0 < immediate < 16, discard LSB)
-  "SRAI", // rs1 >> immediate => rd (0 < immediate < 16, LSB -> MSB)
-  "LUI", // immediate => rd (fill lowest 12 bits with 0)
-  "AUIPC", // immediate + current address => rd (fill lowest 12 bits with 0)
-  "NOP" // literally does nothing, used to align instructions to byte boundaries
-]
-
-// instructions which use registers
-const REGISTER_INSTRUCTIONS: readonly string[] = [
-  "ADD", // rs1 + rs2 => rd
-  "SUB", // rs1 - rs2 => rd
-  "SLT", // rs1 < rs2 => rd (signed)
-  "SLTU", // rs1 < rs2 => rd (unsigned)
-  "SLL", // rs1 << rs2 => rd (0 < immediate < 16, discard MSB)
-  "SRL", // rs1 >> rs2 => rd (0 < immediate < 16, discard LSB)
-  "JAL",
-  "JALR",
-  "MV",
-  "NOP",
-];
 
 /*** Functions ***/
 
-function verifyInstructionLegality(instruction: string) : boolean {
-  /**
-   * Verifies whether an instruction is a valid RISC-V instruction supported by the simulator.
-   * 
-   * @param instruction - The instruction to verify (e.g., "ADDI", "LUI", "ADD")
-   * @returns {boolean} - Returns true if the instruction is supported (exists in either 
-   *                     REGISTER_INSTRUCTIONS or IMMEDIATE_INSTRUCTIONS arrays),
-   *                     false otherwise.
-   */
-  return (REGISTER_INSTRUCTIONS.includes(instruction) || IMMEDIATE_INSTRUCTIONS.includes(instruction));
-}
 
-function verifyRegisterLegality(register: string) : boolean {
-  /**
-   * Verifies whether a register name is valid in the RISC-V architecture supported by the simulator.
-   * 
-   * @param register - The register name to verify (e.g., "x0", "a0", "sp", "t0")
-   * @returns {boolean} - Returns true if the register name is valid (exists in the
-   *                      STRINGS_TO_REGISTERS mapping), false otherwise.
-   */
-  return Array.from(STRINGS_TO_REGISTERS.keys()).includes(register);
-}
-
-function addi(rd: string, rs1: string, imm: number) { 
-  if (!(STRINGS_TO_REGISTERS.get(rd) == 0)) { 
-    registers.set((STRINGS_TO_REGISTERS.get(rd) ?? 1), 
+function addi(rd: string, rs1: string, imm: number) {
+  if (!(STRINGS_TO_REGISTERS.get(rd) == 0)) {
+    registers.set((STRINGS_TO_REGISTERS.get(rd) ?? 1),
       (STRINGS_TO_REGISTERS.get(rs1) ?? 0) + imm);
   }
 }
 
 function applyITypeFunction(instruction: string) {
-  
+
 }

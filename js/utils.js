@@ -16,7 +16,12 @@ var OperandType;
 const I_TYPE = [OperandType.REGISTER, OperandType.REGISTER, OperandType.IMMEDIATE];
 const U_TYPE = [OperandType.REGISTER, OperandType.IMMEDIATE];
 const R_TYPE = [OperandType.REGISTER, OperandType.REGISTER, OperandType.REGISTER];
-const LEGAL_REGISTERS = new Map([
+const NONE_TYPE = [];
+const PSEUDO_TYPE = [OperandType.REGISTER, OperandType.REGISTER];
+const J_TYPE = [];
+// for storing the current values in the registers
+const registers = new Map(Array.from({ length: 33 }, (_, i) => [i, 0x00000000]));
+const STRINGS_TO_REGISTERS = new Map([
     // General Register Names
     ["x0", 0],
     ["x1", 1],
@@ -95,7 +100,7 @@ const INSTRUCTION_TO_FORMAT = new Map([
     ["ORI", I_TYPE],
     ["XORI", I_TYPE],
     ["SLLI", I_TYPE],
-    ["SLRI", I_TYPE],
+    ["SRLI", I_TYPE],
     ["SRAI", I_TYPE],
     ["LUI", U_TYPE],
     ["AUIPC", U_TYPE],
@@ -105,40 +110,19 @@ const INSTRUCTION_TO_FORMAT = new Map([
     ["SLTU", R_TYPE],
     ["SLL", R_TYPE],
     ["SRL", R_TYPE],
+    ["NOP", NONE_TYPE],
+    ["MV", PSEUDO_TYPE],
+    ["SEQZ", PSEUDO_TYPE],
+    ["NOT", PSEUDO_TYPE],
+    ["JAL", J_TYPE],
+    ["JALR", J_TYPE]
 ]);
-// instructions which use immediates
-const IMMEDIATE_INSTRUCTIONS = [
-    "ADDI", // rs1 + immediate => rd
-    "SLTI", // rs1 < immediate => rd (signed)
-    "SLTIU", // rs1 < immediate => rd (unsigned)
-    "ANDI", // rs1 AND immediate => rd (bitwise)
-    "ORI", // rs1 OR immediate => rd (bitwisea)
-    "XORI", // rs1 XOR immediate => rd (bitwise)
-    "SLLI", // rs1 << immediate => rd (0 < immediate < 16, discard MSB)
-    "SLRI", // rs1 >> immediate => rd (0 < immediate < 16, discard LSB)
-    "SRAI", // rs1 >> immediate => rd (0 < immediate < 16, LSB -> MSB)
-    "LUI", // immediate => rd (fill lowest 12 bits with 0)
-    "AUIPC", // immediate + current address => rd (fill lowest 12 bits with 0)
-    "NOP" // literally does nothing, used to align instructions to byte boundaries
-];
-// instructions which use registers
-const REGISTER_INSTRUCTIONS = [
-    "ADD", // rs1 + rs2 => rd
-    "SUB", // rs1 - rs2 => rd
-    "SLT", // rs1 < rs2 => rd (signed)
-    "SLTU", // rs1 < rs2 => rd (unsigned)
-    "SLL", // rs1 << rs2 => rd (0 < immediate < 16, discard MSB)
-    "SRL", // rs1 >> rs2 => rd (0 < immediate < 16, discard LSB)
-    "JAL",
-    "JALR",
-    "MV",
-    "NOP",
-];
 /*** Functions ***/
-function verifyInstructionLegality(instruction) {
-    return (REGISTER_INSTRUCTIONS.includes(instruction) || IMMEDIATE_INSTRUCTIONS.includes(instruction));
+function addi(rd, rs1, imm) {
+    var _a, _b;
+    if (!(STRINGS_TO_REGISTERS.get(rd) == 0)) {
+        registers.set(((_a = STRINGS_TO_REGISTERS.get(rd)) !== null && _a !== void 0 ? _a : 1), ((_b = STRINGS_TO_REGISTERS.get(rs1)) !== null && _b !== void 0 ? _b : 0) + imm);
+    }
 }
-function verifyRegisterLegality(register) {
-    console.log(Array.from(LEGAL_REGISTERS.keys()));
-    return Array.from(LEGAL_REGISTERS.keys()).includes(register);
+function applyITypeFunction(instruction) {
 }
