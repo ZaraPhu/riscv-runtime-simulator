@@ -17,14 +17,15 @@ var ParserStatus;
     ParserStatus[ParserStatus["ERR"] = 1] = "ERR";
 })(ParserStatus || (ParserStatus = {}));
 /*** Functions ***/
-function assembleInput(instructionList) {
+function parseInput(instructionList) {
     /**
      * Processes and validates assembly instructions.
      *
-     * This function examines each instruction in the provided list, splitting it into its
-     * components (opcode, operands) and verifying the opcode and operands using helper functions.
-     * If an illegal instruction or register is found, the function logs an error and records
-     * which line contains the invalid instruction.
+     * This function parses each instruction in the provided list, splitting it into its
+     * components (opcode, operands) and verifying the format and values. It checks if the
+     * instruction has a valid opcode, correct number of operands, and valid register names
+     * or immediate values. If any validation fails, the error status is set and the line
+     * number is recorded.
      *
      * @param instructionList - Array of assembly instruction strings to validate
      * @returns ParserResult object containing processed instructions, status, and error line numbers
@@ -37,33 +38,45 @@ function assembleInput(instructionList) {
     // Iterate through each instruction in the provided list
     instructionList.forEach((instruction, instructionIndex) => {
         // Split the instruction into its components and remove commas
-        const destructuredInstruction = instruction.split(" ").map(element => element.replace(",", ""));
+        const destructuredInstruction = instruction
+            .split(" ")
+            .map((element) => element.replace(",", ""));
+        // If the instruction is empty (after splitting), mark as error
         if (destructuredInstruction.length == 0) {
             parsingResult.status = ParserStatus.ERR;
         }
+        // Look up the expected format for this instruction using its opcode
         const format = INSTRUCTION_TO_FORMAT.get(destructuredInstruction[0]);
-        if (!format) {
+        // If the opcode isn't recognized, mark as error
+        if (format == undefined) {
+            console.log(`Instruction ${destructuredInstruction[0]} was not recognized.`);
             parsingResult.status = ParserStatus.ERR;
         }
+        // Extract just the operands (everything after the opcode)
         const operands = destructuredInstruction.slice(1);
+        // Check if the number of operands matches the expected format
         if (!(operands.length == (format === null || format === void 0 ? void 0 : format.length))) {
+            console.log(`${operands.length} operands supplied but expected ${format === null || format === void 0 ? void 0 : format.length} operands.`);
             parsingResult.status = ParserStatus.ERR;
         }
+        // Validate each operand based on its expected type
         format === null || format === void 0 ? void 0 : format.forEach((expectedOperand, index) => {
             if (expectedOperand == OperandType.REGISTER) {
+                // For register operands, check if it's a valid register name
                 if (!Array.from(STRINGS_TO_REGISTERS.keys()).includes(operands[index])) {
                     console.log(`Operand ${operands[index]} is not a valid register.`);
                     parsingResult.status = ParserStatus.ERR;
                 }
             }
             else {
-                // checks for immediate value inputs
+                // For immediate value operands, check if it's a valid number
                 if (Number.isNaN(parseInt(operands[index]))) {
-                    console.log(`Operand ${operands[index]} is not a valid immediate,`);
+                    console.log(`Operand ${operands[index]} is not a valid immediate.`);
                     parsingResult.status = ParserStatus.ERR;
                 }
             }
         });
+        // If any errors were found in this instruction, record its line number
         if (parsingResult.status == ParserStatus.ERR) {
             parsingResult.errOnLines.push(instructionIndex);
         }
@@ -72,7 +85,9 @@ function assembleInput(instructionList) {
     });
     return parsingResult;
 }
-function executeInstructions() {
+function executeInstruction(destructuredInstruction) {
+    const callable = INSTRUCTION_TO_CALLABLE.get(destructuredInstruction[0]);
+    return callable(destructuredInstruction[1], destructuredInstruction[2], destructuredInstruction[3]);
 }
 /*** Program Starting Point ***/
 // Add click event listener to the assemble button
@@ -81,9 +96,14 @@ assembleButton === null || assembleButton === void 0 ? void 0 : assembleButton.a
     const instructionsList = (assemblyEditor === null || assemblyEditor === void 0 ? void 0 : assemblyEditor.value.split("\n")) || [];
     // Call the assembleInput function to validate the instructions
     // and store the result in status (true = valid, false = invalid)
-    const parsingResult = assembleInput(instructionsList);
+    const parsingResult = parseInput(instructionsList);
     // If the assembly is invalid, log which line caused the error
     if (parsingResult.status == ParserStatus.ERR) {
         console.log(`Error at line(s) ${parsingResult.errOnLines}`);
+    }
+    else {
+        parsingResult.output.forEach((destructuredInstruction) => {
+            executeInstruction(destructuredInstruction);
+        });
     }
 });

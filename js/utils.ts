@@ -137,12 +137,27 @@ const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   ["JALR", J_TYPE],
 ]);
 
-const INSTRUCTION_TO_CALLBACK: ReadonlyMap<string, CallableFunction> = new Map([
+const INSTRUCTION_TO_CALLABLE: ReadonlyMap<string, CallableFunction> = new Map([
   ["ADDI", addi],
+  ["SLTI", slti],
+  ["SLTIU", sltiu],
+  ["ANDI", andi],
+  ["ORI", ori],
+  ["XORI", xori],
+  ["SLLI", slli],
+  ["SRLI", srli],
+  ["SRAI", srai]
 ]);
 
 /*** Functions ***/
 function setRegister(rd: string, val: number): boolean {
+  /**
+   * Sets a value to a specific register.
+   * 
+   * @param rd - The destination register name (e.g., "x0", "sp", "a0")
+   * @param val - The value to set in the register
+   * @returns true if the register was successfully set, false if trying to modify register x0 (which is hardwired to 0)
+   */
   const register: number | undefined = STRINGS_TO_REGISTERS.get(rd)!;
   if (register != 0) {
     registers.set(register, val);
@@ -153,11 +168,64 @@ function setRegister(rd: string, val: number): boolean {
 }
 
 function addi(rd: string, rs1: string, imm: number): boolean {
+  /**
+   * Implements the ADDI instruction (Add Immediate).
+   * Adds an immediate value to the source register and stores the result in the destination register.
+   * 
+   * @param rd - The destination register name
+   * @param rs1 - The source register name
+   * @param imm - The immediate value to add
+   * @returns true if the operation was successful, false if trying to modify register x0
+   */
+   console.log("Called addi function.");
   const sourceRegister: number = STRINGS_TO_REGISTERS.get(rs1)!;
   return setRegister(rd, registers.get(sourceRegister)! + imm);
 }
 
 function slti(rd: string, rs1: string, imm: number): boolean {
+  /**
+   * Implements the SLTI instruction (Set Less Than Immediate).
+   * Sets the destination register to 1 if the value in the source register is less than
+   * the immediate value, otherwise sets it to 0.
+   * 
+   * @param rd - The destination register name
+   * @param rs1 - The source register name
+   * @param imm - The immediate value to compare against
+   * @returns true if the operation was successful, false if trying to modify register x0
+   */
+  console.log("Called slti function.");
   const sourceRegister: number = STRINGS_TO_REGISTERS.get(rs1)!;
   return setRegister(rd, (registers.get(sourceRegister)! < imm) ? 1 : 0);
+}
+
+function sltiu(rd: string, rs1: string, imm: number): boolean { 
+  console.log("Called sltiu function.");
+  return false;
+}
+
+
+function andi(rd: string, rs1: string, imm: number): boolean { 
+  console.log("Called andi function.");
+  return false;
+}
+function ori(rd: string, rs1: string, imm: number): boolean { 
+  console.log("Called ori function.");
+  return false;
+}
+function xori(rd: string, rs1: string, imm: number): boolean { 
+  console.log("Called xori function.");
+  return false;
+}
+function slli(rd: string, rs1: string, imm: number): boolean { 
+  console.log("Called slli function.");
+  return false;
+}
+function srli(rd: string, rs1: string, imm: number): boolean { 
+  console.log("Called srli function.");
+  return false;
+}
+
+function srai(rd: string, rs1: string, imm: number): boolean { 
+  console.log("Called srai function.");
+  return false;
 }

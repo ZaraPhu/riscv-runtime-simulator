@@ -1,7 +1,7 @@
-/* 
+/*
 The purpose of this file is to implement the RISC-V runtime simulator.
 It will be used to simulate the execution of RISC-V instructions which are
-retrieved from the assembly editor textarea and update the state of the 
+retrieved from the assembly editor textarea and update the state of the
 execution environment.
 Author: Zara Phukan.
 Creation Date: April 3, 2025.
@@ -50,31 +50,49 @@ function parseInput(instructionList: string[]): ParserResult {
   // Iterate through each instruction in the provided list
   instructionList.forEach((instruction, instructionIndex) => {
     // Split the instruction into its components and remove commas
-    const destructuredInstruction: string[] = instruction.split(" ").map(element => element.replace(",", ""));
+    const destructuredInstruction: string[] = instruction
+      .split(" ")
+      .map((element) => element.replace(",", ""));
     // If the instruction is empty (after splitting), mark as error
-    if (destructuredInstruction.length == 0) { parsingResult.status = ParserStatus.ERR; }
+    if (destructuredInstruction.length == 0) {
+      parsingResult.status = ParserStatus.ERR;
+    }
 
     // Look up the expected format for this instruction using its opcode
-    const format: OperandType[] | undefined = INSTRUCTION_TO_FORMAT.get(destructuredInstruction[0]);
+    const format: OperandType[] | undefined = INSTRUCTION_TO_FORMAT.get(
+      destructuredInstruction[0],
+    );
     // If the opcode isn't recognized, mark as error
-    if (!format) { parsingResult.status = ParserStatus.ERR; }
+    if (format == undefined) {
+      console.log(
+        `Instruction ${destructuredInstruction[0]} was not recognized.`,
+      );
+      parsingResult.status = ParserStatus.ERR;
+    }
 
     // Extract just the operands (everything after the opcode)
     const operands: string[] = destructuredInstruction.slice(1);
     // Check if the number of operands matches the expected format
-    if (!(operands.length == format?.length)) { parsingResult.status = ParserStatus.ERR; }
+    if (!(operands.length == format?.length)) {
+      console.log(
+        `${operands.length} operands supplied but expected ${format?.length} operands.`,
+      );
+      parsingResult.status = ParserStatus.ERR;
+    }
 
     // Validate each operand based on its expected type
     format?.forEach((expectedOperand, index) => {
       if (expectedOperand == OperandType.REGISTER) {
         // For register operands, check if it's a valid register name
-        if (!Array.from(STRINGS_TO_REGISTERS.keys()).includes(operands[index])) { 
+        if (
+          !Array.from(STRINGS_TO_REGISTERS.keys()).includes(operands[index])
+        ) {
           console.log(`Operand ${operands[index]} is not a valid register.`);
           parsingResult.status = ParserStatus.ERR;
         }
       } else {
         // For immediate value operands, check if it's a valid number
-        if (Number.isNaN(parseInt(operands[index]))) { 
+        if (Number.isNaN(parseInt(operands[index]))) {
           console.log(`Operand ${operands[index]} is not a valid immediate.`);
           parsingResult.status = ParserStatus.ERR;
         }
@@ -82,7 +100,7 @@ function parseInput(instructionList: string[]): ParserResult {
     });
 
     // If any errors were found in this instruction, record its line number
-    if (parsingResult.status == ParserStatus.ERR) { 
+    if (parsingResult.status == ParserStatus.ERR) {
       parsingResult.errOnLines.push(instructionIndex);
     }
 
@@ -92,8 +110,15 @@ function parseInput(instructionList: string[]): ParserResult {
   return parsingResult;
 }
 
-function executeInstructions(destructuredInstruction: string[]) { 
-  
+function executeInstruction(destructuredInstruction: string[]): boolean {
+  const callable: CallableFunction = INSTRUCTION_TO_CALLABLE.get(
+    destructuredInstruction[0],
+  )!;
+  return callable(
+    destructuredInstruction[1],
+    destructuredInstruction[2],
+    destructuredInstruction[3],
+  );
 }
 
 /*** Program Starting Point ***/
@@ -109,6 +134,9 @@ assembleButton?.addEventListener("click", () => {
   // If the assembly is invalid, log which line caused the error
   if (parsingResult.status == ParserStatus.ERR) {
     console.log(`Error at line(s) ${parsingResult.errOnLines}`);
-  } 
-
+  } else {
+    parsingResult.output.forEach((destructuredInstruction) => {
+      executeInstruction(destructuredInstruction);
+    });
+  }
 });
