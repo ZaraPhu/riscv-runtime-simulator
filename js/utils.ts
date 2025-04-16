@@ -16,6 +16,9 @@ enum OperandType {
 const I_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER, OperandType.IMMEDIATE];
 const U_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.IMMEDIATE];
 const R_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER, OperandType.REGISTER];
+const NONE_TYPE: OperandType[] = [];
+const PSEUDO_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER];
+const J_TYPE: OperandType[] = [];
 
 // for storing the current values in the registers
 const registers: Map<number, number> = new Map(
@@ -102,7 +105,7 @@ const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   ["ORI", I_TYPE],
   ["XORI", I_TYPE],
   ["SLLI", I_TYPE],
-  ["SLRI", I_TYPE],
+  ["SRLI", I_TYPE],
   ["SRAI", I_TYPE],
   ["LUI", U_TYPE],
   ["AUIPC", U_TYPE],
@@ -112,6 +115,10 @@ const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   ["SLTU", R_TYPE],
   ["SLL", R_TYPE],
   ["SRL", R_TYPE],
+  ["NOP", NONE_TYPE],
+  ["MV", PSEUDO_TYPE],
+  ["SEQZ", PSEUDO_TYPE],
+  ["NOT", PSEUDO_TYPE]
 ]);
 
 // instructions which use immediates
@@ -171,7 +178,8 @@ function verifyRegisterLegality(register: string) : boolean {
 
 function addi(rd: string, rs1: string, imm: number) { 
   if (!(STRINGS_TO_REGISTERS.get(rd) == 0)) { 
-    registers.set((STRINGS_TO_REGISTERS.get(rd) ?? 1), (STRINGS_TO_REGISTERS.get(rs1) ?? 0) + imm);
+    registers.set((STRINGS_TO_REGISTERS.get(rd) ?? 1), 
+      (STRINGS_TO_REGISTERS.get(rs1) ?? 0) + imm);
   }
 }
 
