@@ -13,6 +13,7 @@ const XLEN = 32; // going to implement R32I first
 const htmlRootNode = document.querySelector("html");
 const darkModeButton = document.querySelector("#toggle-dark-mode");
 let darkModeEnabled = false;
+// used to populate the register list
 const registerList = document.querySelector("#register-list");
 /*** Functions ***/
 function createRegister(index) {
@@ -33,11 +34,11 @@ function createRegister(index) {
     }
     else if (index == XLEN) {
         registerName.textContent = "pc";
-        registerValue.setAttribute("id", `pc-register`);
+        registerValue.setAttribute("id", "pc-register");
     }
     else {
         registerName.textContent = "ERROR";
-        registerValue.setAttribute("id", `error`);
+        registerValue.setAttribute("id", "error");
     }
     innerDiv.appendChild(registerName);
     innerDiv.appendChild(registerValue);
@@ -51,6 +52,7 @@ function populateRegisterList() {
     }
 }
 /*** Program Starting Point */
+// sets up the dark mode toggle button
 darkModeButton === null || darkModeButton === void 0 ? void 0 : darkModeButton.addEventListener("click", () => {
     darkModeEnabled = !darkModeEnabled;
     if (darkModeEnabled) {
@@ -60,4 +62,5 @@ darkModeButton === null || darkModeButton === void 0 ? void 0 : darkModeButton.a
         htmlRootNode.setAttribute("data-bs-theme", "light");
     }
 });
+// sets up the register list and populates it
 populateRegisterList();

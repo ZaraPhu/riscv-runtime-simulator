@@ -14,7 +14,7 @@ Creation Date: April 1, 2025.
         <link rel="stylesheet" href="css/bootstrap/bootstrap.css">
     </head>
     <body class="vw-100">
-        <header 
+        <header
             id="pg-banner"
             class="vw-100 h-auto py-5 d-flex flex-row flex-wrap justify-content-evenly"
         >
@@ -25,7 +25,7 @@ Creation Date: April 1, 2025.
                 <button id="toggle-dark-mode" class="btn btn-primary">Toggle Dark Mode</button>
             </nav>
         </header>
-        <main 
+        <main
             id="pg-main-content"
             class="vw-100 d-flex flex-row justify-content-center"
             style="min-height: 50vh;"
@@ -45,7 +45,7 @@ Creation Date: April 1, 2025.
                     ></textarea>
                     <label for="assembly-editor">Assembly Editor</label>
                 </div>
-                <button id="run-code-button" class="my-3 btn btn-primary">Run Code</button>
+                <button id="assemble-button" class="my-3 btn btn-primary">Assemble</button>
             </div>
             <div id="memory-peek" class="px-5">
                 <nav id="memory-nav">
@@ -56,5 +56,7 @@ Creation Date: April 1, 2025.
         <footer id="pg-footer" class="px-2">&copy; 2025. Zara Phukan.</footer>
         <script src="js/bootstrap/bootstrap.bundle.js"></script>
         <script src="js/page-behaviour.js"></script>
+        <script src="js/utils.js"></script>
+        <script src="js/runtime-simulator.js"></script>
     </body>
 </html>
