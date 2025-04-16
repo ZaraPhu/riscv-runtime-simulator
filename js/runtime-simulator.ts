@@ -92,7 +92,7 @@ function assembleInput(instructionList: string[]): ParserResult {
   return parsingResult;
 }
 
-function executeInstructions() { 
+function executeInstructions(destructuredInstruction: string[]) { 
   
 }
 

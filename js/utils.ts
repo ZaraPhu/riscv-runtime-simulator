@@ -12,6 +12,12 @@ enum OperandType {
   REGISTER
 }
 
+interface InstructionObject { 
+  instruction: CallableFunction,
+  type: OperandType[],
+  operands: string[]
+}
+
 /*** Constants ***/
 const I_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER, OperandType.IMMEDIATE];
 const U_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.IMMEDIATE];
@@ -123,9 +129,11 @@ const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   ["JALR", J_TYPE]
 ]);
 
+const INSTRUCTION_TO_CALLBACK: ReadonlyMap<string, CallableFunction> = new Map([
+  ["ADDI", addi]
+]);
+
 /*** Functions ***/
-
-
 function addi(rd: string, rs1: string, imm: number) {
   if (!(STRINGS_TO_REGISTERS.get(rd) == 0)) {
     registers.set((STRINGS_TO_REGISTERS.get(rd) ?? 1),
@@ -133,6 +141,4 @@ function addi(rd: string, rs1: string, imm: number) {
   }
 }
 
-function applyITypeFunction(instruction: string) {
-
-}
+function 
