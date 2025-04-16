@@ -28,7 +28,7 @@ interface ParserResult {
 }
 
 /*** Functions ***/
-function assembleInput(instructionList: string[]): ParserResult {
+function parseInput(instructionList: string[]): ParserResult {
   /**
    * Processes and validates assembly instructions.
    *
@@ -104,7 +104,7 @@ assembleButton?.addEventListener("click", () => {
 
   // Call the assembleInput function to validate the instructions
   // and store the result in status (true = valid, false = invalid)
-  const parsingResult: ParserResult = assembleInput(instructionsList);
+  const parsingResult: ParserResult = parseInput(instructionsList);
 
   // If the assembly is invalid, log which line caused the error
   if (parsingResult.status == ParserStatus.ERR) {

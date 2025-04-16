@@ -9,26 +9,34 @@ Creation Date: April 15, 2025.
 // custom enum for stating instruction format
 enum OperandType {
   IMMEDIATE,
-  REGISTER
+  REGISTER,
 }
 
-interface InstructionObject { 
-  instruction: CallableFunction,
-  type: OperandType[],
-  operands: string[]
+interface InstructionObject {
+  instruction: CallableFunction;
+  type: OperandType[];
+  operands: string[];
 }
 
 /*** Constants ***/
-const I_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER, OperandType.IMMEDIATE];
+const I_TYPE: OperandType[] = [
+  OperandType.REGISTER,
+  OperandType.REGISTER,
+  OperandType.IMMEDIATE,
+];
 const U_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.IMMEDIATE];
-const R_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER, OperandType.REGISTER];
+const R_TYPE: OperandType[] = [
+  OperandType.REGISTER,
+  OperandType.REGISTER,
+  OperandType.REGISTER,
+];
 const NONE_TYPE: OperandType[] = [];
 const PSEUDO_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER];
 const J_TYPE: OperandType[] = [];
 
 // for storing the current values in the registers
 const registers: Map<number, number> = new Map(
-  Array.from({ length: 33 }, (_, i) => [i, 0x00000000])
+  Array.from({ length: 33 }, (_, i) => [i, 0x00000000]),
 );
 
 const STRINGS_TO_REGISTERS: ReadonlyMap<string, number> = new Map([
@@ -100,7 +108,7 @@ const STRINGS_TO_REGISTERS: ReadonlyMap<string, number> = new Map([
   ["t4", 29],
   ["t5", 30],
   ["t6", 31],
-  ["pc", 32]
+  ["pc", 32],
 ]);
 
 const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
@@ -126,19 +134,30 @@ const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   ["SEQZ", PSEUDO_TYPE],
   ["NOT", PSEUDO_TYPE],
   ["JAL", J_TYPE],
-  ["JALR", J_TYPE]
+  ["JALR", J_TYPE],
 ]);
 
 const INSTRUCTION_TO_CALLBACK: ReadonlyMap<string, CallableFunction> = new Map([
-  ["ADDI", addi]
+  ["ADDI", addi],
 ]);
 
 /*** Functions ***/
-function addi(rd: string, rs1: string, imm: number) {
-  if (!(STRINGS_TO_REGISTERS.get(rd) == 0)) {
-    registers.set((STRINGS_TO_REGISTERS.get(rd) ?? 1),
-      (STRINGS_TO_REGISTERS.get(rs1) ?? 0) + imm);
+function setRegister(rd: string, val: number): boolean {
+  const register: number | undefined = STRINGS_TO_REGISTERS.get(rd)!;
+  if (register != 0) {
+    registers.set(register, val);
+    return true;
+  } else {
+    return false;
   }
 }
 
-function 
+function addi(rd: string, rs1: string, imm: number): boolean {
+  const sourceRegister: number = STRINGS_TO_REGISTERS.get(rs1)!;
+  return setRegister(rd, registers.get(sourceRegister)! + imm);
+}
+
+function slti(rd: string, rs1: string, imm: number): boolean {
+  const sourceRegister: number = STRINGS_TO_REGISTERS.get(rs1)!;
+  return setRegister(rd, (registers.get(sourceRegister)! < imm) ? 1 : 0);
+}
