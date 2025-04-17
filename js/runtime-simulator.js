@@ -86,8 +86,29 @@ function parseInput(instructionList) {
     return parsingResult;
 }
 function executeInstruction(destructuredInstruction) {
-    const callable = INSTRUCTION_TO_CALLABLE.get(destructuredInstruction[0]);
-    return callable(destructuredInstruction[1], destructuredInstruction[2], destructuredInstruction[3]);
+    const instructionType = INSTRUCTION_TO_FORMAT.get(destructuredInstruction[0]);
+    switch (instructionType) {
+        case I_TYPE:
+            let iTypeCallable = I_INSTRUCTION_TO_FUNCTION.get(destructuredInstruction[0]);
+            iTypeCallable(destructuredInstruction[1], destructuredInstruction[2], destructuredInstruction[3]);
+            break;
+        case R_TYPE:
+            let rTypeCallable = R_INSTRUCTION_TO_FUNCTION.get(destructuredInstruction[0]);
+            rTypeCallable(destructuredInstruction[1], destructuredInstruction[2], destructuredInstruction[3]);
+            break;
+        case U_TYPE:
+            let uTypeCallable = U_INSTRUCTION_TO_FUNCTION.get(destructuredInstruction[0]);
+            uTypeCallable(destructuredInstruction[1], destructuredInstruction[2]);
+            break;
+        case NONE_TYPE:
+            let noneTypeCallable = NONE_INSTRUCTION_TO_FUNCTION.get(destructuredInstruction[0]);
+            noneTypeCallable();
+            break;
+        default:
+            console.log("Got an invalid instruction type.");
+            break;
+    }
+    return true;
 }
 /*** Program Starting Point ***/
 // Add click event listener to the assemble button

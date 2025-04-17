@@ -13,6 +13,11 @@ var OperandType;
     OperandType[OperandType["REGISTER"] = 1] = "REGISTER";
 })(OperandType || (OperandType = {}));
 /*** Constants ***/
+const registerDisplays = [];
+for (let i = 0; i < XLEN; i++) {
+    registerDisplays.push(document.querySelector(`#register-${i}`));
+}
+registerDisplays.push(document.querySelector("#pc-register"));
 const I_TYPE = [
     OperandType.REGISTER,
     OperandType.REGISTER,
@@ -28,7 +33,7 @@ const NONE_TYPE = [];
 const PSEUDO_TYPE = [OperandType.REGISTER, OperandType.REGISTER];
 const J_TYPE = [];
 // for storing the current values in the registers
-const registers = new Map(Array.from({ length: 33 }, (_, i) => [i, 0x00000000]));
+const registers = new Map(Array.from({ length: 33 }, (_, i) => [i, 0]));
 const STRINGS_TO_REGISTERS = new Map([
     // General Register Names
     ["x0", 0],
@@ -125,7 +130,7 @@ const INSTRUCTION_TO_FORMAT = new Map([
     ["JAL", J_TYPE],
     ["JALR", J_TYPE],
 ]);
-const INSTRUCTION_TO_CALLABLE = new Map([
+const I_INSTRUCTION_TO_FUNCTION = new Map([
     ["ADDI", addi],
     ["SLTI", slti],
     ["SLTIU", sltiu],
@@ -136,7 +141,29 @@ const INSTRUCTION_TO_CALLABLE = new Map([
     ["SRLI", srli],
     ["SRAI", srai]
 ]);
+const U_INSTRUCTION_TO_FUNCTION = new Map([
+    ["LUI", lui],
+    ["AUIPC", auipc]
+]);
+const R_INSTRUCTION_TO_FUNCTION = new Map([
+    ["ADD", add],
+    ["SUB", sub],
+    ["SLT", slt],
+    ["SLTU", sltu],
+    ["SLL", sll],
+    ["SRL", srl]
+]);
+const NONE_INSTRUCTION_TO_FUNCTION = new Map([
+    ["NOP", () => { }]
+]);
 /*** Functions ***/
+function updateRegisterDisplays() {
+    registerDisplays.forEach((register_i, i) => {
+        const registerHex = registers.get(i).toString(16);
+        const zeros = "0".repeat(Math.max((8 - registerHex.length), 0));
+        register_i.textContent = `0x${zeros}${registerHex}`;
+    });
+}
 function setRegister(rd, val) {
     /**
      * Sets a value to a specific register.
@@ -148,6 +175,7 @@ function setRegister(rd, val) {
     const register = STRINGS_TO_REGISTERS.get(rd);
     if (register != 0) {
         registers.set(register, val);
+        updateRegisterDisplays();
         return true;
     }
     else {
@@ -166,7 +194,7 @@ function addi(rd, rs1, imm) {
      */
     console.log("Called addi function.");
     const sourceRegister = STRINGS_TO_REGISTERS.get(rs1);
-    return setRegister(rd, registers.get(sourceRegister) + imm);
+    return setRegister(rd, Number(registers.get(sourceRegister)) + Number(imm));
 }
 function slti(rd, rs1, imm) {
     /**
@@ -181,7 +209,8 @@ function slti(rd, rs1, imm) {
      */
     console.log("Called slti function.");
     const sourceRegister = STRINGS_TO_REGISTERS.get(rs1);
-    return setRegister(rd, (registers.get(sourceRegister) < imm) ? 1 : 0);
+    console.log((Number(registers.get(sourceRegister)) < Number(imm)) ? 1 : 0);
+    return setRegister(rd, (Number(registers.get(sourceRegister)) < Number(imm)) ? 1 : 0);
 }
 function sltiu(rd, rs1, imm) {
     console.log("Called sltiu function.");
@@ -209,5 +238,37 @@ function srli(rd, rs1, imm) {
 }
 function srai(rd, rs1, imm) {
     console.log("Called srai function.");
+    return false;
+}
+function lui(rd, imm) {
+    console.log("Called lui function.");
+    return false;
+}
+function auipc(rd, imm) {
+    console.log("Called auipc function.");
+    return false;
+}
+function add(rd, rs1, rs2) {
+    console.log("Called the add function.");
+    return false;
+}
+function sub(rd, rs1, rs2) {
+    console.log("Called the sub function.");
+    return false;
+}
+function slt(rd, rs1, rs2) {
+    console.log("Called the slt function.");
+    return false;
+}
+function sltu(rd, rs1, rs2) {
+    console.log("Called the sltu function.");
+    return false;
+}
+function sll(rd, rs1, rs2) {
+    console.log("Called the sll function.");
+    return false;
+}
+function srl(rd, rs1, rs2) {
+    console.log("Called the srl function.");
     return false;
 }

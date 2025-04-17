@@ -114,25 +114,39 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
   const instructionType: OperandType[] = INSTRUCTION_TO_FORMAT.get(
     destructuredInstruction[0]
   )!;
-  const instructionCallable: CallableFunction = INSTRUCTION_TO_CALLABLE.get(
-    destructuredInstruction[0],
-  )!;
-  if ((instructionType == I_TYPE) || (instructionType == R_TYPE)) {
-    return instructionCallable(
-      destructuredInstruction[1],
-      destructuredInstruction[2],
-      destructuredInstruction[3],
-    );
-  } else if ((instructionType == U_TYPE) || (instructionType == PSEUDO_TYPE)) {
-    return instructionCallable(
-      destructuredInstruction[1],
-      destructuredInstruction[2]
-    );
-  } else if (instructionType == NONE_TYPE) {
-    return instructionCallable();
-  } else { 
-    return false;
+  switch (instructionType) {
+    case I_TYPE:
+      let iTypeCallable = I_INSTRUCTION_TO_FUNCTION.get(destructuredInstruction[0])!;
+      iTypeCallable(
+        destructuredInstruction[1],
+        destructuredInstruction[2],
+        destructuredInstruction[3],
+      );
+      break;
+    case R_TYPE:
+      let rTypeCallable = R_INSTRUCTION_TO_FUNCTION.get(destructuredInstruction[0])!;
+      rTypeCallable(
+        destructuredInstruction[1],
+        destructuredInstruction[2],
+        destructuredInstruction[3]
+      );
+      break;
+    case U_TYPE:
+      let uTypeCallable = U_INSTRUCTION_TO_FUNCTION.get(destructuredInstruction[0])!;
+      uTypeCallable(
+        destructuredInstruction[1],
+        destructuredInstruction[2]
+      );
+      break;
+    case NONE_TYPE:
+      let noneTypeCallable = NONE_INSTRUCTION_TO_FUNCTION.get(destructuredInstruction[0])!;
+      noneTypeCallable();
+      break;
+    default:
+      console.log("Got an invalid instruction type.");
+      break;
   }
+  return true;
 }
 
 /*** Program Starting Point ***/
