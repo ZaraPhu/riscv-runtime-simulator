@@ -7,11 +7,13 @@ Author: Zara Phukan.
 Creation Date: April 15, 2025.
 */
 /*** Constants ***/
+// registerDisplays which is an array of all the register display elements
 const registerDisplays = [];
 for (let i = 0; i < XLEN; i++) {
     registerDisplays.push(document.querySelector(`#register-${i}`));
 }
 registerDisplays.push(document.querySelector("#pc-register"));
+// I_INSTRUCTION_TO_FUNCTION is a map of all the I-type instructions to their corresponding functions
 const I_INSTRUCTION_TO_FUNCTION = new Map([
     ["ADDI", addi],
     ["SLTI", slti],
@@ -23,10 +25,12 @@ const I_INSTRUCTION_TO_FUNCTION = new Map([
     ["SRLI", srli],
     ["SRAI", srai],
 ]);
+// U_INSTRUCTION_TO_FUNCTION is a map of all the U-type instructions to their corresponding functions
 const U_INSTRUCTION_TO_FUNCTION = new Map([
     ["LUI", lui],
     ["AUIPC", auipc],
 ]);
+// R_INSTRUCTION_TO_FUNCTION is a map of all the R-type instructions to their corresponding functions
 const R_INSTRUCTION_TO_FUNCTION = new Map([
     ["ADD", add],
     ["SUB", sub],
@@ -35,45 +39,93 @@ const R_INSTRUCTION_TO_FUNCTION = new Map([
     ["SLL", sll],
     ["SRL", srl],
 ]);
+// NONE_INSTRUCTION_TO_FUNCTION is a map of all the none-type instructions to their corresponding functions
 const NONE_INSTRUCTION_TO_FUNCTION = new Map([
     ["NOP", () => { }],
 ]);
 /*** Functions ***/
-function twosComplement(val, totalDigits) {
-    // assuming that -2^(totalDigits) <= val < 2^(totalDigits - 1)
-    if (val < 0) {
-        const absVal = Math.abs(val);
-        const bits = absVal.toString(2).padStart(totalDigits, "0");
-        console.log(bits);
-        let chars = [...bits];
-        chars = chars.map(char => char === "0" ? "1" : "0");
-        // now need to add one to it
-        console.log(chars);
-        let carry = 1;
-        for (let i = chars.length - 1; i >= 0; i--) {
-            if (chars[i] === "1") {
-                chars[i] = "0";
-            }
-            else {
-                chars[i] = "1";
-                carry = 0;
-                break;
-            }
-        }
-        console.log(carry);
-        console.log(chars);
-        if (carry === 1) {
-            chars.unshift("1");
-        }
-        else {
-            chars.unshift("0");
-        }
-        console.log(chars.join("").slice(-totalDigits));
-        return chars.join("").slice(-totalDigits);
+function binaryToHex(binVal) {
+    /**
+     * Converts a binary string to its hexadecimal representation.
+     *
+     * @param binVal - The binary string to convert (should be a multiple of 4 bits)
+     * @returns The hexadecimal representation of the input binary string
+     */
+    let hexVal = "";
+    for (let i = 0; i < binVal.length; i += 4) {
+        hexVal += parseInt(binVal.substring(i, i + 4), 2).toString(16);
     }
-    else {
+    return hexVal;
+}
+function hexToBinary(hexVal) {
+    /**
+     * Converts a hexadecimal string to its binary representation.
+     *
+     * @param hexVal - The hexadecimal string to convert
+     * @returns The binary representation of the input hexadecimal string (4 bits per hex digit)
+     */
+    let binVal = "";
+    for (let i = 0; i < hexVal.length; i++) {
+        const binDigit = parseInt(hexVal[i], 16).toString(2).padStart(4, '0');
+        binVal += binDigit;
+    }
+    return binVal;
+}
+function twosComplement(val, totalDigits) {
+    /**
+     * Converts a decimal number to its two's complement binary representation.
+     *
+     * This function handles both positive and negative numbers:
+     * - For positive numbers, it returns the binary representation padded to totalDigits
+     * - For negative numbers, it calculates the two's complement by:
+     *   1. Taking the absolute value of the number
+     *   2. Converting to binary and padding
+     *   3. Inverting all bits (1s become 0s and vice versa)
+     *   4. Adding 1 to the result
+     *
+     * @param val - The decimal number to convert
+     * @param totalDigits - The total number of bits in the resulting binary string
+     * @returns A binary string representation in two's complement format
+     * @assumption -2^(totalDigits) <= val < 2^(totalDigits - 1)
+     */
+    // Handle positive numbers directly - just return binary representation
+    if (val >= 0) {
         return val.toString(2).padStart(totalDigits, "0");
     }
+    // --- STEP 1: Get absolute value and convert to binary ---
+    const absVal = Math.abs(val);
+    const bits = absVal.toString(2).padStart(totalDigits, "0");
+    // --- STEP 2: Convert string to array and invert all bits ---
+    let chars = [...bits];
+    chars = chars.map(char => char === "0" ? "1" : "0");
+    // --- STEP 3: Add one to the inverted result ---
+    for (let i = chars.length - 1; i >= 0; i--) {
+        if (chars[i] === "1") {
+            chars[i] = "0";
+        }
+        else {
+            chars[i] = "1";
+            break;
+        }
+    }
+    // --- STEP 4: Return the result at the correct length ---
+    return chars.join("").slice(-totalDigits);
+}
+function binaryAdd(op1, op2) {
+    let carry = 0;
+    let result = "";
+    const len = Math.max(op1.length, op2.length);
+    op1 = op1.padStart(len, "0");
+    op2 = op2.padStart(len, "0");
+    console.log(`op1: ${op1}, op2: ${op2}`);
+    for (let i = len - 1; i >= 0; i--) {
+        let num1 = op1[i];
+        let num2 = op2[i];
+        console.log(`num1: ${num1}, num2: ${num2}, carry: ${carry}`);
+        result = (parseInt(num1) + parseInt(num2) + Number(carry) % 2 == 0) ? "0" + result : "1" + result;
+        carry = ((carry + parseInt(num1) + parseInt(num2)) >= 2) ? 1 : 0;
+    }
+    return result;
 }
 function setNumHexDigits(val, totalDigits) {
     return val.toString(16).padStart(totalDigits, '0').slice(-totalDigits);
@@ -119,7 +171,7 @@ function addi(rd, rs1, imm) {
      * @returns true if the operation was successful, false if trying to modify register x0 (which is hardwired to 0)
      */
     if ((imm < -4096) || (imm > 4095)) {
-        raiseError("Immediate value out of 12-bit signed range.");
+        raiseError("Immediate value outside of 12-bit signed range.");
         return false;
     }
     const sourceValue = registers.get(STRINGS_TO_REGISTERS.get(rs1));

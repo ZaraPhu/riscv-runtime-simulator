@@ -7,12 +7,14 @@ Creation Date: April 15, 2025.
 */
 
 /*** Constants ***/
+// registerDisplays which is an array of all the register display elements
 const registerDisplays: HTMLParagraphElement[] = [];
 for (let i = 0; i < XLEN; i++) {
   registerDisplays.push(document.querySelector(`#register-${i}`)!);
 }
 registerDisplays.push(document.querySelector("#pc-register")!);
 
+// I_INSTRUCTION_TO_FUNCTION is a map of all the I-type instructions to their corresponding functions
 const I_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["ADDI", addi],
   ["SLTI", slti],
@@ -25,11 +27,13 @@ const I_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["SRAI", srai],
 ]);
 
+// U_INSTRUCTION_TO_FUNCTION is a map of all the U-type instructions to their corresponding functions
 const U_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["LUI", lui],
   ["AUIPC", auipc],
 ]);
 
+// R_INSTRUCTION_TO_FUNCTION is a map of all the R-type instructions to their corresponding functions
 const R_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["ADD", add],
   ["SUB", sub],
@@ -39,6 +43,7 @@ const R_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["SRL", srl],
 ]);
 
+// NONE_INSTRUCTION_TO_FUNCTION is a map of all the none-type instructions to their corresponding functions
 const NONE_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["NOP", () => {}],
 ]);
@@ -105,52 +110,77 @@ function twosComplement(val: number, totalDigits: number) : string {
   chars = chars.map(char => char === "0" ? "1" : "0");
 
   // --- STEP 3: Add one to the inverted result ---
-  let carry = 1;
   for (let i = chars.length - 1; i >= 0; i--) {
     if (chars[i] === "1") {
       chars[i] = "0";
     } else {
       chars[i] = "1";
-      carry = 0;
       break;
     }
   }
 
-  // --- STEP 4: Handle any remaining carry and ensure proper length ---
-  if (carry === 1) {
-    chars.unshift("1");  // Add a new digit if we still have a carry
-  } else { 
-    chars.unshift("0");  // Otherwise pad with leading zero
-  }
-
-  // --- STEP 5: Return the result at the correct length ---
+  // --- STEP 4: Return the result at the correct length ---
   return chars.join("").slice(-totalDigits);
 }
 
 function binaryAdd(op1: string, op2: string) : string {
+  /**
+   * Performs a binary addition of two binary strings.
+   * 
+   * This function simulates the process of adding two binary numbers together
+   * the same way it would be done by hand, processing each bit position from
+   * right to left and tracking the carry.
+   * 
+   * @param op1 - First binary string operand
+   * @param op2 - Second binary string operand
+   * @returns The binary sum of the two operands as a string
+   */
+
+  // Initialize carry bit and result string
   let carry: number = 0;
   let result: string = "";
+
+  // Determine the maximum length and pad both operands to the same length
   const len: number = Math.max(op1.length, op2.length);
-  op1.padStart(len, "0");
-  op2.padStart(len, "0");
-  
-  for (let i = len - 1; i >= 0; i++) { 
+  op1 = op1.padStart(len, "0");
+  op2 = op2.padStart(len, "0");
+
+  // Process each bit from right to left (least to most significant bit)
+  for (let i = len - 1; i >= 0; i--) { 
+    // Get the bits at the current position
     let num1: string = op1[i];
     let num2: string = op2[i];
+
+    // Calculate the current bit of the result
+    // If the sum of the two bits plus the carry is even, the result bit is 0
+    // Otherwise, the result bit is 1
+    result = ((parseInt(num1) + parseInt(num2) + Number(carry) % 2 == 0) ? "0" : "1") + result;
+
+    // Calculate the carry for the next position
+    // If the sum of the two bits plus the carry is 2 or greater, the carry is 1
+    // Otherwise, the carry is 0
     carry = ((carry + parseInt(num1) + parseInt(num2)) >= 2) ? 1 : 0;
-    result = (parseInt(num1) ^ parseInt(num2) ? "1" + result;
   }
+  
+  return result;
 }
 
-function setNumHexDigits(val: number, totalDigits: number): string { 
+function setNumHexDigits(val: number, totalDigits: number): string {
+  /**
+   * Converts a number to its hexadecimal representation with a fixed number of digits.
+   * 
+   * This function takes a number, converts it to hexadecimal, and ensures the
+   * result has exactly the specified number of digits by:
+   * 1. Converting the number to a hex string
+   * 2. Padding with leading zeros if necessary
+   * 3. Truncating from the left if the result is longer than totalDigits
+   * 
+   * @param val - The number to convert to hexadecimal
+   * @param totalDigits - The exact number of hex digits in the output
+   * @returns A hexadecimal string with exactly totalDigits characters
+   */
   return val.toString(16).padStart(totalDigits, '0').slice(-totalDigits);
 }
-
-function setNumBinaryDigits(val: number, totalDigits: number): string { 
-  const zeros: string = "0".repeat(Math.max(totalDigits - val.toString(2).length, 0));
-  return `${zeros}${val.toString(2).slice(-totalDigits)}`;
-}
-
 
 function setRegister(rd: string, val: number): boolean {
   /**
@@ -160,18 +190,31 @@ function setRegister(rd: string, val: number): boolean {
    * @param val - The value to set in the register
    * @returns true if the register was successfully set, false if trying to modify register x0 (which is hardwired to 0)
    */
+
+  // Convert register name to register number
   const register: number = STRINGS_TO_REGISTERS.get(rd)!;
+
+  // Register x0 is hardwired to 0 and cannot be modified
   if (register == 0) {
     raiseError("Cannot modify register x0");
     return false;
   } 
+
+  // Set the register value in our register file
   registers.set(register, val);
+
+  // Update all register displays in the UI
   registerDisplays.forEach((register_i, i) => {
+    // Get the current value for this register
     const registerHex: number = registers.get(i)!;
+
     // TODO: route to either the hex or binary option depending option
     // what the user chooses
+
+    // Update the display with formatted hexadecimal value
     register_i.textContent = `0x${setNumHexDigits(registerHex, 8)}`;
   });
+
   return true;
 }
 
@@ -190,12 +233,12 @@ function addi(rd: string, rs1: string, imm: number): boolean {
    * @returns true if the operation was successful, false if trying to modify register x0 (which is hardwired to 0)
    */
   if ((imm < -4096) || (imm > 4095)) { 
-    raiseError("Immediate value out of 12-bit signed range.");
+    raiseError("Immediate value outside of 12-bit signed range.");
     return false;
   }
   const sourceValue: number = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  let sum = Number(sourceValue) + Number(imm);
-  return setRegister(rd, sum);
+  const binarySum: string = binaryAdd(sourceValue.toString(2), imm.toString(2));
+  return setRegister(rd, Number(binarySum));
 }
 
 function slti(rd: string, rs1: string, imm: number): boolean {
