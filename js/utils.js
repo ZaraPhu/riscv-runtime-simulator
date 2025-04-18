@@ -112,27 +112,55 @@ function twosComplement(val, totalDigits) {
     return chars.join("").slice(-totalDigits);
 }
 function binaryAdd(op1, op2) {
+    /**
+     * Performs a binary addition of two binary strings.
+     *
+     * This function simulates the process of adding two binary numbers together
+     * the same way it would be done by hand, processing each bit position from
+     * right to left and tracking the carry.
+     *
+     * @param op1 - First binary string operand
+     * @param op2 - Second binary string operand
+     * @returns The binary sum of the two operands as a string
+     */
+    // Initialize carry bit and result string
     let carry = 0;
     let result = "";
+    // Determine the maximum length and pad both operands to the same length
     const len = Math.max(op1.length, op2.length);
     op1 = op1.padStart(len, "0");
     op2 = op2.padStart(len, "0");
-    console.log(`op1: ${op1}, op2: ${op2}`);
+    // Process each bit from right to left (least to most significant bit)
     for (let i = len - 1; i >= 0; i--) {
+        // Get the bits at the current position
         let num1 = op1[i];
         let num2 = op2[i];
-        console.log(`num1: ${num1}, num2: ${num2}, carry: ${carry}`);
-        result = (parseInt(num1) + parseInt(num2) + Number(carry) % 2 == 0) ? "0" + result : "1" + result;
+        // Calculate the current bit of the result
+        // If the sum of the two bits plus the carry is even, the result bit is 0
+        // Otherwise, the result bit is 1
+        result = ((parseInt(num1) + parseInt(num2) + Number(carry) % 2 == 0) ? "0" : "1") + result;
+        // Calculate the carry for the next position
+        // If the sum of the two bits plus the carry is 2 or greater, the carry is 1
+        // Otherwise, the carry is 0
         carry = ((carry + parseInt(num1) + parseInt(num2)) >= 2) ? 1 : 0;
     }
     return result;
 }
 function setNumHexDigits(val, totalDigits) {
+    /**
+     * Converts a number to its hexadecimal representation with a fixed number of digits.
+     *
+     * This function takes a number, converts it to hexadecimal, and ensures the
+     * result has exactly the specified number of digits by:
+     * 1. Converting the number to a hex string
+     * 2. Padding with leading zeros if necessary
+     * 3. Truncating from the left if the result is longer than totalDigits
+     *
+     * @param val - The number to convert to hexadecimal
+     * @param totalDigits - The exact number of hex digits in the output
+     * @returns A hexadecimal string with exactly totalDigits characters
+     */
     return val.toString(16).padStart(totalDigits, '0').slice(-totalDigits);
-}
-function setNumBinaryDigits(val, totalDigits) {
-    const zeros = "0".repeat(Math.max(totalDigits - val.toString(2).length, 0));
-    return `${zeros}${val.toString(2).slice(-totalDigits)}`;
 }
 function setRegister(rd, val) {
     /**
@@ -142,16 +170,22 @@ function setRegister(rd, val) {
      * @param val - The value to set in the register
      * @returns true if the register was successfully set, false if trying to modify register x0 (which is hardwired to 0)
      */
+    // Convert register name to register number
     const register = STRINGS_TO_REGISTERS.get(rd);
+    // Register x0 is hardwired to 0 and cannot be modified
     if (register == 0) {
         raiseError("Cannot modify register x0");
         return false;
     }
+    // Set the register value in our register file
     registers.set(register, val);
+    // Update all register displays in the UI
     registerDisplays.forEach((register_i, i) => {
+        // Get the current value for this register
         const registerHex = registers.get(i);
         // TODO: route to either the hex or binary option depending option
         // what the user chooses
+        // Update the display with formatted hexadecimal value
         register_i.textContent = `0x${setNumHexDigits(registerHex, 8)}`;
     });
     return true;
@@ -175,8 +209,8 @@ function addi(rd, rs1, imm) {
         return false;
     }
     const sourceValue = registers.get(STRINGS_TO_REGISTERS.get(rs1));
-    let sum = Number(sourceValue) + Number(imm);
-    return setRegister(rd, sum);
+    const binarySum = binaryAdd(sourceValue.toString(2), imm.toString(2));
+    return setRegister(rd, Number(binarySum));
 }
 function slti(rd, rs1, imm) {
     /**
