@@ -44,7 +44,7 @@ const NONE_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
 ]);
 
 /*** Functions ***/
-function binarytoHex(binVal: string) : string {
+function binaryToHex(binVal: string) : string {
   /**
    * Converts a binary string to its hexadecimal representation.
    * 
