@@ -14,6 +14,9 @@ const assemblyEditor = document.querySelector(
 const assembleButton = document.querySelector(
   "#assemble-button",
 ) as HTMLButtonElement | null;
+const errorText = document.querySelector(
+  "#error-text",
+) as HTMLParagraphElement | null;
 
 // custom object for returning the status from the parser
 enum ParserStatus {
@@ -28,6 +31,12 @@ interface ParserResult {
 }
 
 /*** Functions ***/
+function raiseError(message: string) { 
+  if (errorText != null) { 
+    errorText.textContent = message;
+  }
+}
+
 function parseInput(instructionList: string[]): ParserResult {
   /**
    * Processes and validates assembly instructions.

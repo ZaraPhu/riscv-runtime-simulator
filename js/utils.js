@@ -39,16 +39,48 @@ const NONE_INSTRUCTION_TO_FUNCTION = new Map([
     ["NOP", () => { }],
 ]);
 /*** Functions ***/
-function updateRegisterDisplays() {
-    registerDisplays.forEach((register_i, i) => {
-        const registerHex = registers.get(i).toString(16).slice(-7);
-        const zeros = "0".repeat(Math.max(8 - registerHex.length, 0));
-        register_i.textContent = `0x${zeros}${registerHex}`;
-    });
+function twosComplement(val, totalDigits) {
+    // assuming that -2^(totalDigits) <= val < 2^(totalDigits - 1)
+    if (val < 0) {
+        const absVal = Math.abs(val);
+        const bits = absVal.toString(2).padStart(totalDigits, "0");
+        console.log(bits);
+        let chars = [...bits];
+        chars = chars.map(char => char === "0" ? "1" : "0");
+        // now need to add one to it
+        console.log(chars);
+        let carry = 1;
+        for (let i = chars.length - 1; i >= 0; i--) {
+            if (chars[i] === "1") {
+                chars[i] = "0";
+            }
+            else {
+                chars[i] = "1";
+                carry = 0;
+                break;
+            }
+        }
+        console.log(carry);
+        console.log(chars);
+        if (carry === 1) {
+            chars.unshift("1");
+        }
+        else {
+            chars.unshift("0");
+        }
+        console.log(chars.join("").slice(-totalDigits));
+        return chars.join("").slice(-totalDigits);
+    }
+    else {
+        return val.toString(2).padStart(totalDigits, "0");
+    }
 }
-function setLeadingHexDigits(val, totalDigits) {
-    const zeros = "0".repeat(Math.max(totalDigits - val.toString(16).length, 0));
-    return `0x${zeros}${val.toString(16).slice(-totalDigits)}`;
+function setNumHexDigits(val, totalDigits) {
+    return val.toString(16).padStart(totalDigits, '0').slice(-totalDigits);
+}
+function setNumBinaryDigits(val, totalDigits) {
+    const zeros = "0".repeat(Math.max(totalDigits - val.toString(2).length, 0));
+    return `${zeros}${val.toString(2).slice(-totalDigits)}`;
 }
 function setRegister(rd, val) {
     /**
@@ -59,34 +91,40 @@ function setRegister(rd, val) {
      * @returns true if the register was successfully set, false if trying to modify register x0 (which is hardwired to 0)
      */
     const register = STRINGS_TO_REGISTERS.get(rd);
-    if (register != 0) {
-        registers.set(register, val);
-        updateRegisterDisplays();
-        return true;
-    }
-    else {
+    if (register == 0) {
+        raiseError("Cannot modify register x0");
         return false;
     }
+    registers.set(register, val);
+    registerDisplays.forEach((register_i, i) => {
+        const registerHex = registers.get(i);
+        // TODO: route to either the hex or binary option depending option
+        // what the user chooses
+        register_i.textContent = `0x${setNumHexDigits(registerHex, 8)}`;
+    });
+    return true;
 }
 function addi(rd, rs1, imm) {
     /**
      * Implements the ADDI instruction (Add Immediate).
-     * Adds an immediate value to the source register and stores the result in the destination register.
+     * Adds a 12-bit signed immediate value to the value in the source register,
+     * and stores the result in the destination register.
+     * If the immediate value exceeds the 12-bit signed range (-4096 to 4095),
+     * it will be truncated to fit within this range.
+     * The result is capped at 2^31-1 to prevent overflow.
      *
-     * @param rd - The destination register name
-     * @param rs1 - The source register name
-     * @param imm - The immediate value to add
-     * @returns true if the operation was successful, false if trying to modify register x0
+     * @param rd - The destination register name (e.g., "x1", "t0")
+     * @param rs1 - The source register name containing the base value
+     * @param imm - The immediate value to add (will be truncated to 12-bit signed if needed)
+     * @returns true if the operation was successful, false if trying to modify register x0 (which is hardwired to 0)
      */
-    if ((imm >= 4096) || (imm <= -4095)) {
-        console.log("Immediate value out of range");
+    if ((imm < -4096) || (imm > 4095)) {
+        raiseError("Immediate value out of 12-bit signed range.");
+        return false;
     }
-    /*
-    const sourceValue: string = STRINGS_TO_REGISTERS.get(rs1)!.toString(16).slice(-7);
-    const immValue: string = `${0.repeat()} ${imm.toString(16)} `;
-    return setRegister(rd, Number(registers.get(sourceRegister)!) + Number(imm));
-    */
-    return false;
+    const sourceValue = registers.get(STRINGS_TO_REGISTERS.get(rs1));
+    let sum = Number(sourceValue) + Number(imm);
+    return setRegister(rd, sum);
 }
 function slti(rd, rs1, imm) {
     /**
@@ -99,12 +137,10 @@ function slti(rd, rs1, imm) {
      * @param imm - The immediate value to compare against
      * @returns true if the operation was successful, false if trying to modify register x0
      */
-    console.log("Called slti function.");
-    const sourceRegister = STRINGS_TO_REGISTERS.get(rs1);
-    return setRegister(rd, Number(registers.get(sourceRegister)) < Number(imm) ? 1 : 0);
+    const sourceValue = registers.get(STRINGS_TO_REGISTERS.get(rs1));
+    return setRegister(rd, Number(sourceValue) < Number(imm) ? 1 : 0);
 }
 function sltiu(rd, rs1, imm) {
-    console.log("Called sltiu function.");
     const sourceRegister = STRINGS_TO_REGISTERS.get(rs1);
     return setRegister(rd, Number(registers.get(sourceRegister)) < Number(imm) ? 1 : 0);
 }

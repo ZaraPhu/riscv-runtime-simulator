@@ -10,6 +10,7 @@ Creation Date: April 3, 2025.
 /*** Constants and Variables ***/
 const assemblyEditor = document.querySelector("#assembly-editor");
 const assembleButton = document.querySelector("#assemble-button");
+const errorText = document.querySelector("#error-text");
 // custom object for returning the status from the parser
 var ParserStatus;
 (function (ParserStatus) {
@@ -17,6 +18,11 @@ var ParserStatus;
     ParserStatus[ParserStatus["ERR"] = 1] = "ERR";
 })(ParserStatus || (ParserStatus = {}));
 /*** Functions ***/
+function raiseError(message) {
+    if (errorText != null) {
+        errorText.textContent = message;
+    }
+}
 function parseInput(instructionList) {
     /**
      * Processes and validates assembly instructions.
