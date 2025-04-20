@@ -25,8 +25,8 @@ const PSEUDO_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER];
 const J_TYPE: OperandType[] = [];
 
 // for storing the current values in the registers
-const registers: Map<number, number> = new Map(
-  Array.from({ length: 33 }, (_, i) => [i, 0]),
+const registers: Map<number, string> = new Map(
+  Array.from({ length: 33 }, (_, i) => [i, ""]),
 );
 
 const STRINGS_TO_REGISTERS: ReadonlyMap<string, number> = new Map([

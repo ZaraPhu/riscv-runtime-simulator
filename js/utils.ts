@@ -78,6 +78,36 @@ function hexToBinary(hexVal: string) : string {
   return binVal;
 }
 
+function binaryToOctal(binVal: string) : string {
+  /**
+   * Converts a binary string to its octal representation.
+   * 
+   * @param binVal - The binary string to convert
+   * @returns The octal representation of the input binary string (3 bits per octal digit)
+   */
+  let octVal = "";
+  for (let i = 0; i < binVal.length; i += 3) {
+    const octDigit = parseInt(binVal.substring(i, i + 3), 2).toString(8);
+    octVal += octDigit;
+  }
+  return octVal;
+}
+
+function octalToBinary(octVal: string) : string {
+  /**
+   * Converts an octal string to its binary representation.
+   * 
+   * @param octVal - The octal string to convert
+   * @returns The binary representation of the input octal string (3 bits per octal digit)
+   */
+  let binVal = "";
+  for (let i = 0; i < octVal.length; i++) {
+    const binDigit = parseInt(octVal[i], 8).toString(2).padStart(3, '0');
+    binVal += binDigit;
+  }
+  return binVal;
+}
+
 function twosComplement(val: number, totalDigits: number) : string {
   /**
    * Converts a decimal number to its two's complement binary representation.
@@ -165,24 +195,7 @@ function binaryAdd(op1: string, op2: string) : string {
   return result;
 }
 
-function setNumHexDigits(val: number, totalDigits: number): string {
-  /**
-   * Converts a number to its hexadecimal representation with a fixed number of digits.
-   * 
-   * This function takes a number, converts it to hexadecimal, and ensures the
-   * result has exactly the specified number of digits by:
-   * 1. Converting the number to a hex string
-   * 2. Padding with leading zeros if necessary
-   * 3. Truncating from the left if the result is longer than totalDigits
-   * 
-   * @param val - The number to convert to hexadecimal
-   * @param totalDigits - The exact number of hex digits in the output
-   * @returns A hexadecimal string with exactly totalDigits characters
-   */
-  return val.toString(16).padStart(totalDigits, '0').slice(-totalDigits);
-}
-
-function setRegister(rd: string, val: number): boolean {
+function setRegister(rd: string, val: string, base: number): boolean {
   /**
    * Sets a value to a specific register.
    *
@@ -196,25 +209,21 @@ function setRegister(rd: string, val: number): boolean {
 
   // Register x0 is hardwired to 0 and cannot be modified
   if (register == 0) {
-    raiseError("Cannot modify register x0");
+    raiseError("Cannot modify register x0 (hardwired to 0).");
     return false;
   } 
 
   // Set the register value in our register file
-  registers.set(register, val);
-
-  // Update all register displays in the UI
-  registerDisplays.forEach((register_i, i) => {
-    // Get the current value for this register
-    const registerHex: number = registers.get(i)!;
-
-    // TODO: route to either the hex or binary option depending option
-    // what the user chooses
-
-    // Update the display with formatted hexadecimal value
-    register_i.textContent = `0x${setNumHexDigits(registerHex, 8)}`;
-  });
-
+  if (base == 2) {
+    registers.set(register, `0b${val.padStart(XLEN, "0")}`)
+  } else if (base == 8) {
+    registers.set(register, `0o${val.padStart(XLEN / 3, "0")}`)
+  } else if (base == 16) {
+    registers.set(register, `0x${val.padStart(XLEN / 4, "0")}`)
+  } else { 
+    registers.set(register, `${val.padStart(XLEN / 2, "0")}`)
+  }
+  registerDisplays[register].textContent = registers.get(register)!;
   return true;
 }
 
@@ -236,9 +245,9 @@ function addi(rd: string, rs1: string, imm: number): boolean {
     raiseError("Immediate value outside of 12-bit signed range.");
     return false;
   }
-  const sourceValue: number = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  const binarySum: string = binaryAdd(sourceValue.toString(2), imm.toString(2));
-  return setRegister(rd, Number(binarySum));
+  const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const binarySum: string = binaryAdd(sourceValue, twosComplement(imm, XLEN));
+  return setRegister(rd, Number(binarySum).toString(16).padStart(XLEN / 4, "0"), 16);
 }
 
 function slti(rd: string, rs1: string, imm: number): boolean {
@@ -252,16 +261,22 @@ function slti(rd: string, rs1: string, imm: number): boolean {
    * @param imm - The immediate value to compare against
    * @returns true if the operation was successful, false if trying to modify register x0
    */
-  const sourceValue: number = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  return setRegister(rd, Number(sourceValue) < Number(imm) ? 1 : 0);
+  const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  return false;
+  /* 
+  return setRegister(rd, Number(sourceValue) < Number(imm) ? 1 : 0,);
+  */
 }
 
 function sltiu(rd: string, rs1: string, imm: number): boolean {
   const sourceRegister: number = STRINGS_TO_REGISTERS.get(rs1)!;
+  return false;
+  /* 
   return setRegister(
     rd,
     Number(registers.get(sourceRegister)!) < Number(imm) ? 1 : 0,
   );
+  */
 }
 
 function andi(rd: string, rs1: string, imm: number): boolean {

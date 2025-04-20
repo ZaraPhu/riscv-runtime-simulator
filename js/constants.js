@@ -24,7 +24,7 @@ const NONE_TYPE = [];
 const PSEUDO_TYPE = [OperandType.REGISTER, OperandType.REGISTER];
 const J_TYPE = [];
 // for storing the current values in the registers
-const registers = new Map(Array.from({ length: 33 }, (_, i) => [i, 0]));
+const registers = new Map(Array.from({ length: 33 }, (_, i) => [i, ""]));
 const STRINGS_TO_REGISTERS = new Map([
     // General Register Names
     ["x0", 0],
