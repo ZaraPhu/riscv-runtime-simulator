@@ -6,9 +6,6 @@ Author: Zara Phukan (https://github.com/ZaraPhu).
 Creation Date: April 2, 2025.
 */
 
-/*** Constants and Variables ***/
-// Define the RISC-V architecture bit width constant
-const XLEN: number = 32; // XLEN=32 for RV32I instruction set architecture
 
 // DOM elements and state for dark mode functionality
 const htmlRootNode = document.querySelector("html") as HTMLElement;
@@ -21,6 +18,20 @@ let darkModeEnabled: boolean = false;
 const registerList = document.querySelector(
   "#register-list",
 ) as HTMLUListElement | null;
+
+// used to set the number representation of the registers
+const binaryCheck: HTMLInputElement = document.querySelector(
+  "#binary-check",
+) as HTMLInputElement;
+const decimalCheck: HTMLInputElement = document.querySelector(
+  "#decimal-check",
+) as HTMLInputElement;
+const hexadecimalCheck: HTMLInputElement = document.querySelector(
+  "#hexadecimal-check",
+) as HTMLInputElement;
+const octalCheck: HTMLInputElement = document.querySelector(
+  "#octal-check",
+) as HTMLInputElement;
 
 /*** Functions ***/
 function createRegister(index: number): HTMLLIElement {
@@ -105,3 +116,9 @@ darkModeButton?.addEventListener("click", () => {
 
 // sets up the register list and populates it
 populateRegisterList();
+
+const registerDisplays: HTMLParagraphElement[] = [];
+for (let i = 0; i < XLEN; i++) {
+  registerDisplays.push(document.querySelector(`#register-${i}`)!);
+}
+registerDisplays.push(document.querySelector("#pc-register")!);

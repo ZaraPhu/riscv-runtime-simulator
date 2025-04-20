@@ -30,11 +30,39 @@ Creation Date: April 1, 2025.
             class="vw-100 d-flex flex-row justify-content-center"
             style="min-height: 50vh;"
         >
-            <ul
-                id="register-list"
-                class="list-group px-3 d-flex flex-column justify-content-evenly"
-            >
-            </ul>
+            <div>
+                <div class="mx-auto px-3 pb-3 d-flex flex-row justify-content-between">
+                    <div class="form-check  form-check-inline">
+                      <input class="form-check-input" type="radio" name="representationCheck" id="binary-check" checked>
+                      <label class="form-check-label" for="binary-check">
+                          Binary
+                      </label>
+                    </div>
+                    <div class="form-check  form-check-inline">
+                      <input class="form-check-input" type="radio" name="representationCheck" id="octal-check">
+                      <label class="form-check-label" for="octal-check">
+                          Octal
+                      </label>
+                    </div>
+                    <div class="form-check  form-check-inline">
+                      <input class="form-check-input" type="radio" name="representationCheck" id="decimal-check">
+                      <label class="form-check-label" for="decimal-check">
+                          Decimal
+                      </label>
+                    </div>
+                    <div class="form-check  form-check-inline">
+                      <input class="form-check-input" type="radio" name="representationCheck" id="hexadecimal-check">
+                      <label class="form-check-label" for="hexadecimal-check">
+                          Hexadecimal
+                      </label>
+                    </div>
+                </div>
+                <ul
+                    id="register-list"
+                    class="list-group px-3 d-flex flex-column justify-content-evenly"
+                >
+                </ul>
+            </div>
             <div class="mx-3 d-flex flex-column justify-content-start align-items-center">
                 <div class="form-floating">
                     <textarea
@@ -56,9 +84,8 @@ Creation Date: April 1, 2025.
         </main>
         <footer id="pg-footer" class="px-2">&copy; 2025. Zara Phukan.</footer>
         <script src="js/bootstrap/bootstrap.bundle.js"></script>
-        <script src="dist/js/page-behaviour.js"></script>
-        <script src="dist/js/constants.js"></script>
         <script src="dist/js/utils.js"></script>
+        <script src="dist/js/page-behaviour.js"></script>
         <script src="dist/js/runtime-simulator.js"></script>
     </body>
 </html>

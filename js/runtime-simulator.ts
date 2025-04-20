@@ -18,17 +18,6 @@ const errorText = document.querySelector(
   "#error-text",
 ) as HTMLParagraphElement | null;
 
-// custom object for returning the status from the parser
-enum ParserStatus {
-  OK,
-  ERR,
-}
-
-interface ParserResult {
-  output: string[][];
-  status: ParserStatus.OK | ParserStatus.ERR;
-  errOnLines: number[];
-}
 
 /*** Functions ***/
 function raiseError(message: string) {
@@ -36,6 +25,7 @@ function raiseError(message: string) {
     errorText.textContent = message;
   }
 }
+
 function parseInput(instructionList: string[]): ParserResult {
   /**
    * Processes and validates assembly instructions.
@@ -52,7 +42,7 @@ function parseInput(instructionList: string[]): ParserResult {
   const parsingResult: ParserResult = {
     output: [],
     status: ParserStatus.OK,
-    errOnLines: [],
+    errMessage: "",
   };
 
   // Iterate through each instruction in the provided list
@@ -62,10 +52,9 @@ function parseInput(instructionList: string[]): ParserResult {
       .map((element) => element.replace(",", ""));
     // If the instruction is empty (after splitting), mark as error
     if (destructuredInstruction.length == 0) {
-      raiseError(`Line ${i + 1}: Empty instruction.`);
       parsingResult.status = ParserStatus.ERR;
-      parsingResult.errOnLines.push(i);
-      break;
+      parsingResult.errMessage += `Line ${i + 1}: Empty instruction.\n`;
+      continue;
     }
 
     // Look up the expected format for this instruction using its opcode
@@ -74,24 +63,18 @@ function parseInput(instructionList: string[]): ParserResult {
     );
     // If the opcode isn't recognized, mark as error
     if (format == undefined) {
-      raiseError(
-        `Line ${i + 1}: Instruction ${destructuredInstruction[0]} was not recognized.`,
-      );
       parsingResult.status = ParserStatus.ERR;
-      parsingResult.errOnLines.push(i);
-      break;
+      parsingResult.errMessage += `Line ${i + 1}: Instruction ${destructuredInstruction[0]} was not recognized.\n`;
+      continue;
     }
 
     // Extract just the operands (everything after the opcode)
     const operands: string[] = destructuredInstruction.slice(1);
     // Check if the number of operands matches the expected format
     if (!(operands.length == format?.length)) {
-      raiseError(
-        `Line ${i + 1}: ${operands.length} operands supplied but expected ${format?.length} operands.`,
-      );
       parsingResult.status = ParserStatus.ERR;
-      parsingResult.errOnLines.push(i);
-      break;
+      parsingResult.errMessage += `Line ${i + 1}: ${operands.length} operands supplied but expected ${format?.length} operands.\n`;
+      continue;
     }
 
     // Validate each operand based on its expected type
@@ -100,26 +83,19 @@ function parseInput(instructionList: string[]): ParserResult {
       if (expectedOperand == OperandType.REGISTER) {
         // For register operands, check if it's a valid register name
         if (!Array.from(STRINGS_TO_REGISTERS.keys()).includes(operands[j])) {
-          raiseError(`Line ${i + 1}: Operand "${operands[j]}" is not a valid register.`);
           parsingResult.status = ParserStatus.ERR;
-          break;
+          parsingResult.errMessage += `Line ${i + 1}: Operand "${operands[j]}" is not a valid register.\n`;
+          continue;
         }
       } else {
         // For immediate value operands, check if it's a valid number
         if (Number.isNaN(parseInt(operands[j]))) {
-          raiseError(`Line ${i + 1}: Operand "${operands[j]}" is not a valid immediate.`);
           parsingResult.status = ParserStatus.ERR;
-          break;
+          parsingResult.errMessage += `Line ${i + 1}: Operand "${operands[j]}" is not a number.\n`;
+          continue;
         }
       }
     }
-
-    // If any errors were found in this instruction, record its line number
-    if (parsingResult.status == ParserStatus.ERR) {
-      parsingResult.errOnLines.push(i);
-      break;
-    }
-
     // Add the processed instruction to the output regardless of validity
     parsingResult.output.push(destructuredInstruction);
   }
@@ -209,16 +185,14 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
 }
 
 /*** Program Starting Point ***/
-// Initialize registers with default values
-registers.forEach((_, i) => {
-  if (i > 0) {
-    if (i < XLEN) {
-      setRegister(`x${i}`, "0", 16);
-    } else {
-      setRegister("pc", "0", 16);
-    }
-  }
-});
+// Initialize registers with default values in binary
+updateRegisterDisplays();
+
+// adding event listeners which can change the representation
+binaryCheck.addEventListener("click", () => { setRegisterBase(Base.BINARY); updateRegisterDisplays(); });
+octalCheck.addEventListener("click", () => { setRegisterBase(Base.OCTAL); updateRegisterDisplays(); });
+decimalCheck.addEventListener("click", () => { setRegisterBase(Base.DECIMAL); updateRegisterDisplays(); });
+hexadecimalCheck.addEventListener("click", () => { setRegisterBase(Base.HEXADECIMAL); updateRegisterDisplays(); });
 
 // Add click event listener to the assemble button
 assembleButton?.addEventListener("click", () => {
@@ -230,12 +204,14 @@ assembleButton?.addEventListener("click", () => {
   const parsingResult: ParserResult = parseInput(instructionsList);
 
   // If the assembly is invalid, log which line caused the error
-  if (!(parsingResult.status == ParserStatus.ERR)) {
+  if (parsingResult.status == ParserStatus.ERR) {
+    raiseError(parsingResult.errMessage);
+  } else { 
     const instructionList = parsingResult.output;
     let status: boolean = true;
-    for (let i: number = 0; i < instructionList.length; i++) { 
+    for (let i: number = 0; i < instructionList.length; i++) {
       status = executeInstruction(instructionList[i]);
-      if (!status) { 
+      if (!status) {
         break;
       }
     }
