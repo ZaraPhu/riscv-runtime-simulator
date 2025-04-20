@@ -100,14 +100,14 @@ function parseInput(instructionList: string[]): ParserResult {
       if (expectedOperand == OperandType.REGISTER) {
         // For register operands, check if it's a valid register name
         if (!Array.from(STRINGS_TO_REGISTERS.keys()).includes(operands[j])) {
-          raiseError(`Line ${i + 1}: Operand ${operands[j]} is not a valid register.`);
+          raiseError(`Line ${i + 1}: Operand "${operands[j]}" is not a valid register.`);
           parsingResult.status = ParserStatus.ERR;
           break;
         }
       } else {
         // For immediate value operands, check if it's a valid number
         if (Number.isNaN(parseInt(operands[j]))) {
-          raiseError(`Line ${i + 1}: Operand ${operands[j]} is not a valid immediate.`);
+          raiseError(`Line ${i + 1}: Operand "${operands[j]}" is not a valid immediate.`);
           parsingResult.status = ParserStatus.ERR;
           break;
         }
@@ -231,8 +231,13 @@ assembleButton?.addEventListener("click", () => {
 
   // If the assembly is invalid, log which line caused the error
   if (!(parsingResult.status == ParserStatus.ERR)) {
-    parsingResult.output.forEach((destructuredInstruction) => {
-      executeInstruction(destructuredInstruction);
-    });
+    const instructionList = parsingResult.output;
+    let status: boolean = true;
+    for (let i: number = 0; i < instructionList.length; i++) { 
+      status = executeInstruction(instructionList[i]);
+      if (!status) { 
+        break;
+      }
+    }
   }
 });
