@@ -1,0 +1,5 @@
+{
+  "name": "worker1",
+  "compatability_date": "2025-04-27",
+  "main": "./dist"
+}

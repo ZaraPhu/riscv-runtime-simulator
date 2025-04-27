@@ -6,7 +6,7 @@
     "esModuleInterop": true,
     "strict": true,
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "./src",
     "sourceMap": true,
     "declaration": true,
     "removeComments": true,
@@ -21,7 +21,7 @@
     "lib": ["DOM", "ES2020"]
   },
   "include": [
-    "js/**/*.ts"
+    "src/js/**/*.ts"
   ],
   "exclude": [
     "node_modules",

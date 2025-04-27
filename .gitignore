@@ -2,7 +2,11 @@
 npm-debug.log
 yarn-error.log
 
+# Stores for node modules
+node_modules
+
 # Build output
+dist
 
 # Editor and OS files
 .DS_STORE

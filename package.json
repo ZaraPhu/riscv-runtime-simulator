@@ -1,10 +1,10 @@
 {
   "name": "riscv-runtime-simulator",
   "version": "1.0.0",
-  "description": "This project is a webpage which features a RISC-V compiler. As I go through, I will attempt to restrict my scope to what is useful in an educational context. That means that it will not entirely implement every part of the RISC-V ISA, but will instead focus on the most important parts for learning.",
+  "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "mkdir -p dist dist/css dist/js/bootstrap && tsc && cp -r src/css/* dist/css/ && cp src/index.html dist/index.html && cp src/js/bootstrap/* dist/js/bootstrap/",
     "watch": "tsc --watch",
     "clean": "rm -rf dist"
   },
@@ -13,8 +13,8 @@
     "url": "git+https://github.com/ZaraPhu/riscv-runtime-simulator.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Zara Phukan",
+  "license": "GPL-3.0-only",
   "bugs": {
     "url": "https://github.com/ZaraPhu/riscv-runtime-simulator/issues"
   },
@@ -23,6 +23,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "bootstrap": "^5.3.5"
+    "bootstrap": "^5.3.5",
+    "wrangler": "^4.13.2"
   }
 }
