@@ -7,6 +7,7 @@ node_modules
 
 # Build output
 dist
+coverage
 
 # Editor and OS files
 .DS_STORE
