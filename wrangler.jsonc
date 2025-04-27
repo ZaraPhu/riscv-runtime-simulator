@@ -1,5 +1,5 @@
 {
-  "name": "worker1",
+  "name": "riscv-runtime-simulator",
   "compatability_date": "2025-04-27",
   "main": "./dist"
 }

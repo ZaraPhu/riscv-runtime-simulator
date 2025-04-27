@@ -1,4 +1,4 @@
-# riscv-runtime-simulator-source
+# riscv-runtime-simulator
 
 This is the source code reposity for my (Zara's) implementation of a RISC-V Runtime Simulator. The source code is stored here for anybody to be able to modify and use. T
 
