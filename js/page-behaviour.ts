@@ -6,7 +6,6 @@ Author: Zara Phukan (https://github.com/ZaraPhu).
 Creation Date: April 2, 2025.
 */
 
-
 // DOM elements and state for dark mode functionality
 const htmlRootNode = document.querySelector("html") as HTMLElement;
 const darkModeButton = document.querySelector(

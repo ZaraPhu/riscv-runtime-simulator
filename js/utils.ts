@@ -6,6 +6,7 @@ Author: Zara Phukan.
 Creation Date: April 15, 2025.
 */
 
+
 /*****************************************************************************
  * RISC-V SIMULATOR CONSTANTS AND DEFINITIONS
  *****************************************************************************/
@@ -244,7 +245,29 @@ function binaryToOctal(binVal: string): string {
   return octVal;
 }
 
-function decimalToTwosComplement(val: number, totalDigits: number): string {
+function zeroExtend(bits: string): string { 
+  /**
+   * Extends a binary string to XLEN bits by padding with zeros on the left.
+   * Used for unsigned values where the most significant bits should be filled with zeros.
+   * 
+   * @param bits - The binary string to extend
+   * @returns A binary string padded with leading zeros to reach XLEN bits
+   */
+  return bits.padStart(XLEN, "0");
+}
+
+function signExtend(bits: string): string { 
+  /**
+   * Extends a binary string to XLEN bits by padding with the sign bit (leftmost bit) on the left.
+   * Used for signed values to preserve the sign when extending the bit width.
+   * 
+   * @param bits - The binary string to extend (first bit is the sign bit)
+   * @returns A binary string sign-extended to XLEN bits
+   */
+  return bits.padStart(XLEN, bits.charAt(0))
+}
+
+function decimalToTwosComplement(val: number, numDigits: number): string {
   /**
    * Converts a decimal number to its two's complement binary representation.
    *
@@ -264,12 +287,12 @@ function decimalToTwosComplement(val: number, totalDigits: number): string {
 
   // Handle positive numbers directly - just return binary representation
   if (val >= 0) {
-    return val.toString(2).padStart(totalDigits, "0");
+    return val.toString(2).padStart(numDigits, "0");
   }
 
   // --- STEP 1: Get absolute value and convert to binary ---
   const absVal: number = Math.abs(val);
-  const bits: string = absVal.toString(2).padStart(totalDigits, "0");
+  const bits: string = absVal.toString(2).padStart(numDigits, "0");
 
   // --- STEP 2: Convert string to array and invert all bits ---
   let chars: string[] = [...bits];
@@ -286,7 +309,7 @@ function decimalToTwosComplement(val: number, totalDigits: number): string {
   }
 
   // --- STEP 4: Return the result at the correct length ---
-  return chars.join("").slice(-totalDigits);
+  return chars.join("").slice(-numDigits);
 }
 
 function twosComplementToDecimal(bits: string): number {
@@ -307,8 +330,8 @@ function twosComplementToDecimal(bits: string): number {
   if (bits[0] === "1") {
     // Convert to decimal using two's complement
     let invertedBits: string = bits.split("").map((bit) => (bit === "0" ? "1" : "0")).join(""); // flip all the bits
-    const result: number = parseInt(invertedBits, 2); // parse as an integer
-    return (result - Math.pow(2, XLEN));
+    const result: number = parseInt(invertedBits, 2) + 1; // parse as an integer
+    return -result;
   } else {
     // Convert to decimal directly
     return parseInt(bits, 2);
@@ -358,10 +381,26 @@ function binaryAdd(op1: string, op2: string): string {
 }
 
 function setRegisterBase(base: number) { 
-  registerBase = [2, 8, 10, 16].includes(base) ? base : 10;
+  /**
+   * Sets the base for register value display (binary, octal, decimal, or hexadecimal).
+   * 
+   * @param base - The numeric base to use for register display (2, 8, 10, or 16)
+   * @returns void - Updates the global registerBase variable
+   */
+  registerBase = [Base.BINARY, Base.OCTAL, Base.DECIMAL, Base.HEXADECIMAL].includes(base) ? base : Base.DECIMAL;
 }
 
 function updateRegisterDisplays() { 
+  /**
+   * Updates all register displays with current values in the selected base format.
+   * Displays register values with appropriate prefix:
+   * - Binary: 0b prefix
+   * - Octal: 0o prefix
+   * - Hexadecimal: 0x prefix
+   * - Decimal: no prefix (shows value in two's complement)
+   * 
+   * @returns void - Modifies the DOM elements directly
+   */
   registerDisplays.forEach((registerDisplay, i) => {
     if (registerBase == Base.BINARY) { 
       registerDisplay.textContent = `0b${registers.get(i)!}`;
@@ -381,16 +420,16 @@ function setRegister(rd: string, val: string): boolean {
    *
    * @param rd - The destination register name (e.g., "x0", "sp", "a0")
    * @param val - The value to set in the register (must be a binary string)
-   * @returns true if the register was successfully set, false if trying to modify register x0 (which is hardwired to 0)
+   * @returns true after the register is set (register x0 will be set to 0 regardless of input)
    */
 
   // Convert register name to register number
   const register: number = STRINGS_TO_REGISTERS.get(rd)!;
   let valCleaned: string = ((register == 0) ? "0" : val).slice(-XLEN).padStart(XLEN, "0");
-  
+
   // register values are always stored as binary strings
   registers.set(register, valCleaned);
-  
+
   updateRegisterDisplays();
   return true;
 }
@@ -409,10 +448,7 @@ function addi(rd: string, rs1: string, imm: number): boolean {
    * @param imm - The immediate value to add (will be truncated to 12-bit signed if needed)
    * @returns true if the operation was successful, false if trying to modify register x0 (which is hardwired to 0)
    */
-  if (imm < -4096 || imm > 4095) {
-    raiseError("Immediate value outside of 12-bit signed range.");
-    return false;
-  }
+
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const binarySum: string = binaryAdd(sourceValue, decimalToTwosComplement(imm, XLEN));
   return setRegister(rd,binarySum);
@@ -430,33 +466,86 @@ function slti(rd: string, rs1: string, imm: number): boolean {
    * @returns true if the operation was successful, false if trying to modify register x0
    */
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  setRegister(rd, String((twosComplementToDecimal(sourceValue) < imm)));
-  return true;
+  // sign extending a 12 bit immediate value to XLEN bits is just a two's complement representation
+  return setRegister(rd, (twosComplementToDecimal(sourceValue) < imm) ? "1" : "0");
 }
 
 function sltiu(rd: string, rs1: string, imm: number): boolean {
-  const sourceRegister: number = STRINGS_TO_REGISTERS.get(rs1)!;
-  return false;
-  /*
-  return setRegister(
-    rd,
-    Number(registers.get(sourceRegister)!) < Number(imm) ? 1 : 0,
-  );
-  */
+  /**
+   * Implements the SLTIU instruction (Set Less Than Immediate Unsigned).
+   * Sets the destination register to 1 if the value in the source register is less than
+   * the immediate value when treated as unsigned values, otherwise sets it to 0.
+   *
+   * @param rd - The destination register name
+   * @param rs1 - The source register name
+   * @param imm - The immediate value to compare against
+   * @returns true if the operation was successful, false if trying to modify register x0
+   */
+  const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const immUnsigned: number = twosComplementToDecimal(zeroExtend(decimalToTwosComplement(imm, 12)));
+  return setRegister(rd, (twosComplementToDecimal(sourceValue) < immUnsigned) ? "1" : "0");
 }
 
 function andi(rd: string, rs1: string, imm: number): boolean {
-  console.log("Called andi function.");
-  return false;
+  /**
+   * Implements the ANDI instruction (AND Immediate).
+   * Performs a bitwise AND operation between the value in the source register
+   * and the immediate value, storing the result in the destination register.
+   *
+   * @param rd - The destination register name
+   * @param rs1 - The source register name
+   * @param imm - The immediate value for the AND operation
+   * @returns true if the operation was successful, false if trying to modify register x0
+   */
+  const sourceBin: string[] = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!.split("");
+  const immBin: string[] = decimalToTwosComplement(imm, XLEN).split("");
+  const result: string[] = [];
+  for (let i: number = 0; i < XLEN; i++) { 
+    result[i] = (immBin[i] === "1") && (sourceBin[i] === "1") ? "1" : "0";
+  }
+  return setRegister(rd, result.join(""));
 }
+
 function ori(rd: string, rs1: string, imm: number): boolean {
-  console.log("Called ori function.");
-  return false;
+  /**
+   * Implements the ORI instruction (OR Immediate).
+   * Performs a bitwise OR operation between the value in the source register
+   * and the immediate value, storing the result in the destination register.
+   *
+   * @param rd - The destination register name
+   * @param rs1 - The source register name
+   * @param imm - The immediate value for the OR operation
+   * @returns true if the operation was successful, false if trying to modify register x0
+   */
+  const sourceBin: string[] = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!.split("");
+  const immBin: string[] = decimalToTwosComplement(imm, XLEN).split("");
+  const result: string[] = [];
+  for (let i: number = 0; i < XLEN; i++) { 
+    result[i] = (immBin[i] === "1") || (sourceBin[i] === "1") ? "1" : "0";
+  }
+  return setRegister(rd, result.join(""));
 }
+
 function xori(rd: string, rs1: string, imm: number): boolean {
-  console.log("Called xori function.");
-  return false;
+  /**
+   * Implements the XORI instruction (XOR Immediate).
+   * Performs a bitwise XOR operation between the value in the source register
+   * and the immediate value, storing the result in the destination register.
+   *
+   * @param rd - The destination register name
+   * @param rs1 - The source register name
+   * @param imm - The immediate value for the XOR operation
+   * @returns true if the operation was successful, false if trying to modify register x0
+   */
+  const sourceBin: string[] = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!.split("");
+  const immBin: string[] = decimalToTwosComplement(imm, XLEN).split("");
+  const result: string[] = [];
+  for (let i: number = 0; i < XLEN; i++) { 
+    result[i] = !(immBin[i] === sourceBin[i]) ? "1" : "0";
+  }
+  return setRegister(rd, result.join(""));
 }
+
 function slli(rd: string, rs1: string, imm: number): boolean {
   console.log("Called slli function.");
   return false;

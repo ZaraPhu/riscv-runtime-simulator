@@ -21,6 +21,15 @@ const errorText = document.querySelector(
 
 /*** Functions ***/
 function raiseError(message: string) {
+  /**
+   * Displays an error message in the UI.
+   * 
+   * This function updates the error text display element with the provided message.
+   * If the error text element is not found in the DOM (null), the function will
+   * silently fail without displaying the message.
+   * 
+   * @param message - The error message to display
+   */
   if (errorText != null) {
     errorText.textContent = message;
   }
@@ -33,11 +42,21 @@ function parseInput(instructionList: string[]): ParserResult {
    * This function parses each instruction in the provided list, splitting it into its
    * components (opcode, operands) and verifying the format and values. It checks if the
    * instruction has a valid opcode, correct number of operands, and valid register names
-   * or immediate values. If any validation fails, the error status is set and the line
-   * number is recorded.
+   * or immediate values. When validation errors are found, the error status is set and
+   * detailed error messages are generated with line numbers.
+   *
+   * The validation process follows these steps:
+   * 1. Split each instruction into opcode and operands
+   * 2. Verify the instruction is not empty
+   * 3. Check that the opcode is recognized
+   * 4. Validate that the number of operands matches the expected format
+   * 5. Verify each operand is valid based on its expected type (register or immediate)
+   *
+   * Even if errors are found, the function will continue checking other instructions
+   * to provide complete feedback to the user.
    *
    * @param instructionList - Array of assembly instruction strings to validate
-   * @returns ParserResult object containing processed instructions, status, and error line numbers
+   * @returns ParserResult object containing processed instructions, status, and detailed error messages
    */
   const parsingResult: ParserResult = {
     output: [],
@@ -79,7 +98,7 @@ function parseInput(instructionList: string[]): ParserResult {
 
     // Validate each operand based on its expected type
     for (let j: number = 0; j < format.length; j++) {
-      const expectedOperand = format[j];
+      const expectedOperand: OperandType = format[j];
       if (expectedOperand == OperandType.REGISTER) {
         // For register operands, check if it's a valid register name
         if (!Array.from(STRINGS_TO_REGISTERS.keys()).includes(operands[j])) {
@@ -93,6 +112,10 @@ function parseInput(instructionList: string[]): ParserResult {
           parsingResult.status = ParserStatus.ERR;
           parsingResult.errMessage += `Line ${i + 1}: Operand "${operands[j]}" is not a number.\n`;
           continue;
+        } 
+        const operand_j: number = parseInt(operands[j]);
+        if ((operand_j >= 4095) || (operand_j < -4096)) { 
+          
         }
       }
     }
@@ -207,12 +230,15 @@ assembleButton?.addEventListener("click", () => {
   if (parsingResult.status == ParserStatus.ERR) {
     raiseError(parsingResult.errMessage);
   } else { 
+    setRegister("pc", "0");
     const instructionList = parsingResult.output;
     let status: boolean = true;
     for (let i: number = 0; i < instructionList.length; i++) {
       status = executeInstruction(instructionList[i]);
       if (!status) {
         break;
+      } else { 
+        addi("pc", "pc", 1);
       }
     }
   }
