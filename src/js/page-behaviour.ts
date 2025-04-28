@@ -62,7 +62,7 @@ function createRegister(index: number): HTMLLIElement {
   // Create paragraph element for register value (initialized to zero)
   const registerValue = document.createElement("p");
   registerValue.textContent = "0x00000000";
-  registerValue.classList.add("px-2", "fs-6");
+  registerValue.classList.add("fs-6");
 
   // Set the register name and ID based on the index
   if (index < XLEN) {
@@ -107,17 +107,14 @@ function populateRegisterList(): void {
 
 function populateMemoryGrid(rows: number, columns: number) { 
   for (let i: number = 0; i < rows; i++) { 
-    console.log(`Creating row ${i}`);
     const row_i: HTMLDivElement = document.createElement("div");
     row_i.classList.add("row")
     for (let j: number = 0; j < columns; j++) { 
-      console.log(`Creating entry ${i}, ${j}`);
       const column_j: HTMLDivElement = document.createElement("div");
       column_j.classList.add("col");
       column_j.textContent = "test";
       row_i.appendChild(column_j);
     }
-    console.log(`appending row ${i} to memory grid`);
     memoryGrid.appendChild(row_i);
   }
 }
@@ -137,7 +134,7 @@ darkModeButton?.addEventListener("click", () => {
 populateRegisterList();
 
 // set up memory grid
-populateMemoryGrid(4, 4);
+//populateMemoryGrid(4, 4);
 
 const registerDisplays: HTMLParagraphElement[] = [];
 for (let i = 0; i < XLEN; i++) {

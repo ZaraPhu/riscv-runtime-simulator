@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "mkdir -p dist && tsc && cp src/index* dist/",
-    "dev": "npx wrangler dev",
+    "build": "npm run clean && mkdir -p dist dist/css && tsc && cp src/index* dist/ && cp src/css/* dist/css/",
+    "dev": "npm run build && npx wrangler dev",
     "clean": "rm -rf dist"
   },
   "repository": {
