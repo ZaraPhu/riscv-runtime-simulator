@@ -33,13 +33,15 @@ const octalCheck: HTMLInputElement = document.querySelector(
 ) as HTMLInputElement;
 
 // for the memory peeker
-const memoryGrid: HTMLDivElement = document.querySelector("#memory-grid") as HTMLDivElement;
+const memoryGrid: HTMLDivElement = document.querySelector(
+  "#memory-grid",
+) as HTMLDivElement;
 
 /*** Functions ***/
 function createRegister(index: number): HTMLLIElement {
   /**
    * Creates a new HTML list item element that represents a RISC-V register
-   * 
+   *
    * @param index - The register index (0 to XLEN-1 for standard registers, XLEN for pc)
    * @returns An HTMLLIElement that displays both the register name and its value
    */
@@ -90,11 +92,11 @@ function createRegister(index: number): HTMLLIElement {
 function populateRegisterList(): void {
   /**
    * Populates the register display panel with all RISC-V registers.
-   * 
+   *
    * Creates and adds list items for all standard registers (x0 to x31)
    * plus the program counter (pc) to the DOM. Each register is represented
    * as an HTML list item showing the register name and its initial value.
-   * 
+   *
    * This function uses the createRegister() helper function to generate
    * the HTML elements for each register and appends them to the registerList
    * element in the DOM.
@@ -105,11 +107,21 @@ function populateRegisterList(): void {
   }
 }
 
-function populateMemoryGrid(rows: number, columns: number) { 
-  for (let i: number = 0; i < rows; i++) { 
+function populateMemoryGrid(rows: number, columns: number) {
+  /**
+   * Populates the memory grid display with a specified number of rows and columns.
+   *
+   * Creates a grid structure using Bootstrap's row and column layout classes.
+   * Each cell in the grid represents a memory location and is initialized
+   * with placeholder "test" text.
+   *
+   * @param rows - The number of rows to create in the memory grid
+   * @param columns - The number of columns to create in each row
+   */
+  for (let i: number = 0; i < rows; i++) {
     const row_i: HTMLDivElement = document.createElement("div");
-    row_i.classList.add("row")
-    for (let j: number = 0; j < columns; j++) { 
+    row_i.classList.add("row");
+    for (let j: number = 0; j < columns; j++) {
       const column_j: HTMLDivElement = document.createElement("div");
       column_j.classList.add("col");
       column_j.textContent = "test";
@@ -134,7 +146,7 @@ darkModeButton?.addEventListener("click", () => {
 populateRegisterList();
 
 // set up memory grid
-//populateMemoryGrid(4, 4);
+populateMemoryGrid(100, 10);
 
 const registerDisplays: HTMLParagraphElement[] = [];
 for (let i = 0; i < XLEN; i++) {
