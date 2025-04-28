@@ -87,7 +87,14 @@ const J_TYPE: OperandType[] = [];     // Jump instructions
  */
 // Storage for current register values (including program counter)
 const registers: Map<number, string> = new Map(
-  Array.from({ length: 33 }, (_, i) => [i, "0".padStart(XLEN, "0")]),
+  Array.from({ length: 33 }, (_, i) => [i, zeroExtend("0")]),
+);
+
+/**
+ * Memory System
+ */
+const memory: Map<number, string> = new Map(
+  Array.from({ length: 256 }, (_, i) => [i, zeroExtend("0")])
 );
 
 /**

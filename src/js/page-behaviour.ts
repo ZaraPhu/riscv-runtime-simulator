@@ -123,8 +123,9 @@ function populateMemoryGrid(rows: number, columns: number) {
     row_i.classList.add("row");
     for (let j: number = 0; j < columns; j++) {
       const column_j: HTMLDivElement = document.createElement("div");
-      column_j.classList.add("col");
-      column_j.textContent = "test";
+      column_j.classList.add("col", "border", "border-primary-subtle");
+      column_j.setAttribute("id", `memory-cell-${(i + 1) * rows + j}`);
+      column_j.textContent = "0";
       row_i.appendChild(column_j);
     }
     memoryGrid.appendChild(row_i);

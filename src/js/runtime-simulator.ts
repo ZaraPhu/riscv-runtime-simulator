@@ -114,9 +114,6 @@ function parseInput(instructionList: string[]): ParserResult {
           continue;
         } 
         const operand_j: number = parseInt(operands[j]);
-        if ((operand_j >= 4095) || (operand_j < -4096)) { 
-          
-        }
       }
     }
     // Add the processed instruction to the output regardless of validity

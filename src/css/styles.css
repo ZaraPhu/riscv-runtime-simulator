@@ -1,8 +1,13 @@
 body {
     min-height: 50vw;
+    min-width: 400px;
 }
 
 textarea#assembly-editor {
-    min-height: 500px;
-    min-width: 300px;
+    min-width: 20vw;
+    min-height: 50vh;
+}
+
+div#memory-grid {
+    max-height: 90vh;
 }
