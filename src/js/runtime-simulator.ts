@@ -216,12 +216,17 @@ hexadecimalCheck.addEventListener("click", () => { setRegisterBase(Base.HEXADECI
 
 // Add click event listener to the assemble button
 assembleButton?.addEventListener("click", () => {
+  // reset all registers to 0
+  zeroAllRegisters();
+  
   // Split the assembly editor's content into an array of instructions
   const instructionsList: string[] = assemblyEditor?.value.split("\n") || [];
 
   // Call the assembleInput function to validate the instructions
   // and store the result in status (true = valid, false = invalid)
   const parsingResult: ParserResult = parseInput(instructionsList);
+  
+  // Set all register to zero
 
   // If the assembly is invalid, log which line caused the error
   if (parsingResult.status == ParserStatus.ERR) {
