@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "mkdir -p dist dist/css dist/js/bootstrap && tsc && cp -r src/css/* dist/css/ && cp src/index.html dist/index.html && cp src/js/bootstrap/* dist/js/bootstrap/",
-    "watch": "tsc --watch",
+    "build": "mkdir -p dist && tsc && cp src/index* dist/",
+    "dev": "npx wrangler dev",
     "clean": "rm -rf dist"
   },
   "repository": {

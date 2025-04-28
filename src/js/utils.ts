@@ -500,7 +500,7 @@ function andi(rd: string, rs1: string, imm: number): boolean {
   const sourceBin: string[] = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!.split("");
   const immBin: string[] = decimalToTwosComplement(imm, XLEN).split("");
   const result: string[] = [];
-  for (let i: number = 0; i < XLEN; i++) { 
+  for (let i: number = 0; i < XLEN; i++) {
     result[i] = (immBin[i] === "1") && (sourceBin[i] === "1") ? "1" : "0";
   }
   return setRegister(rd, result.join(""));

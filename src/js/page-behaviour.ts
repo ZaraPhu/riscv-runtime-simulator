@@ -32,6 +32,9 @@ const octalCheck: HTMLInputElement = document.querySelector(
   "#octal-check",
 ) as HTMLInputElement;
 
+// for the memory peeker
+const memoryGrid: HTMLDivElement = document.querySelector("#memory-grid") as HTMLDivElement;
+
 /*** Functions ***/
 function createRegister(index: number): HTMLLIElement {
   /**
@@ -102,6 +105,23 @@ function populateRegisterList(): void {
   }
 }
 
+function populateMemoryGrid(rows: number, columns: number) { 
+  for (let i: number = 0; i < rows; i++) { 
+    console.log(`Creating row ${i}`);
+    const row_i: HTMLDivElement = document.createElement("div");
+    row_i.classList.add("row")
+    for (let j: number = 0; j < columns; j++) { 
+      console.log(`Creating entry ${i}, ${j}`);
+      const column_j: HTMLDivElement = document.createElement("div");
+      column_j.classList.add("col");
+      column_j.textContent = "test";
+      row_i.appendChild(column_j);
+    }
+    console.log(`appending row ${i} to memory grid`);
+    memoryGrid.appendChild(row_i);
+  }
+}
+
 /*** Program Starting Point */
 // sets up the dark mode toggle button
 darkModeButton?.addEventListener("click", () => {
@@ -115,6 +135,9 @@ darkModeButton?.addEventListener("click", () => {
 
 // sets up the register list and populates it
 populateRegisterList();
+
+// set up memory grid
+populateMemoryGrid(4, 4);
 
 const registerDisplays: HTMLParagraphElement[] = [];
 for (let i = 0; i < XLEN; i++) {

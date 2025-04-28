@@ -1,5 +1,6 @@
 {
   "name": "riscv-runtime-simulator",
   "compatibility_date":"2025-04-27",
-  "main": "./src/index.js"
+  "main": "./dist/index.js",
+  "site": {"bucket": "./dist"}
 }
