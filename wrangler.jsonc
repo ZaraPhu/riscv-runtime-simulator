@@ -1,5 +1,5 @@
 {
   "name": "riscv-runtime-simulator",
   "compatibility_date":"2025-04-27",
-  "main": "./dist/js/page-behaviour.js"
+  "main": "./src/index.js"
 }
