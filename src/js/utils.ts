@@ -226,7 +226,11 @@ function binaryToHex(binVal: string): string {
   /**
    * Converts a binary string to its hexadecimal representation.
    *
-   * @param binVal - The binary string to convert (should be a multiple of 4 bits)
+   * This function processes the binary string in groups of 4 bits, converting
+   * each group to its corresponding hexadecimal digit. The input binary string
+   * length should ideally be a multiple of 4 for proper conversion.
+   *
+   * @param binVal - The binary string to convert
    * @returns The hexadecimal representation of the input binary string
    */
   let hexVal = "";
@@ -240,8 +244,12 @@ function binaryToOctal(binVal: string): string {
   /**
    * Converts a binary string to its octal representation.
    *
+   * This function processes the binary string in groups of 3 bits, converting
+   * each group to its corresponding octal digit. The function pads the input
+   * binary string to ensure its length is a multiple of 3 bits.
+   *
    * @param binVal - The binary string to convert
-   * @returns The octal representation of the input binary string (3 bits per octal digit)
+   * @returns The octal representation of the input binary string
    */
   let octVal = "";
   const binValCleaned: string = binVal.padStart(Math.ceil(binVal.length / 3) * 3, "0");
@@ -252,24 +260,31 @@ function binaryToOctal(binVal: string): string {
   return octVal;
 }
 
-function zeroExtend(bits: string): string { 
+function zeroExtend(bits: string, len: number = XLEN): string { 
   /**
-   * Extends a binary string to XLEN bits by padding with zeros on the left.
-   * Used for unsigned values where the most significant bits should be filled with zeros.
+   * Extends a binary string to the specified length by padding with zeros on the left.
+   * 
+   * This function is used for unsigned values where the most significant bits should 
+   * be filled with zeros. If no length is specified, the function extends to XLEN bits.
    * 
    * @param bits - The binary string to extend
-   * @returns A binary string padded with leading zeros to reach XLEN bits
+   * @param len - The target length after extension (defaults to XLEN)
+   * @returns A binary string padded with leading zeros to reach the specified length
    */
   return bits.padStart(XLEN, "0");
 }
 
-function signExtend(bits: string): string { 
+function signExtend(bits: string, len: number = XLEN): string { 
   /**
-   * Extends a binary string to XLEN bits by padding with the sign bit (leftmost bit) on the left.
-   * Used for signed values to preserve the sign when extending the bit width.
+   * Extends a binary string to the specified length by padding with the sign bit on the left.
+   * 
+   * This function is used for signed values to preserve the sign when extending the bit width.
+   * It copies the leftmost bit (sign bit) as padding. If no length is specified, the function
+   * extends to XLEN bits.
    * 
    * @param bits - The binary string to extend (first bit is the sign bit)
-   * @returns A binary string sign-extended to XLEN bits
+   * @param len - The target length after extension (defaults to XLEN)
+   * @returns A binary string sign-extended to the specified length
    */
   return bits.padStart(XLEN, bits.charAt(0))
 }
@@ -279,7 +294,7 @@ function decimalToTwosComplement(val: number, numDigits: number): string {
    * Converts a decimal number to its two's complement binary representation.
    *
    * This function handles both positive and negative numbers:
-   * - For positive numbers, it returns the binary representation padded to totalDigits
+   * - For positive numbers, it returns the binary representation padded to numDigits
    * - For negative numbers, it calculates the two's complement by:
    *   1. Taking the absolute value of the number
    *   2. Converting to binary and padding
@@ -287,9 +302,9 @@ function decimalToTwosComplement(val: number, numDigits: number): string {
    *   4. Adding 1 to the result
    *
    * @param val - The decimal number to convert
-   * @param totalDigits - The total number of bits in the resulting binary string
+   * @param numDigits - The total number of bits in the resulting binary string
    * @returns A binary string representation in two's complement format
-   * @assumption -2^(totalDigits) <= val < 2^(totalDigits - 1)
+   * @assumption -2^(numDigits-1) <= val < 2^(numDigits-1)
    */
 
   // Handle positive numbers directly - just return binary representation
@@ -325,10 +340,10 @@ function twosComplementToDecimal(bits: string): number {
    * 
    * This function handles both positive and negative numbers:
    * - For positive numbers (MSB = 0), it directly converts from binary to decimal
-   * - For negative numbers (MSB = 1), it performs two's complement conversion:
+   * - For negative numbers (MSB = 1), it follows the two's complement conversion:
    *   1. Inverting all bits
-   *   2. Converting the inverted binary to decimal
-   *   3. Negating the result and adjusting by subtracting 2^XLEN
+   *   2. Adding 1 to the inverted value
+   *   3. Interpreting the result as a negative decimal value
    * 
    * @param bits - The binary string in two's complement format to convert
    * @returns The decimal representation of the two's complement binary input
@@ -345,16 +360,18 @@ function twosComplementToDecimal(bits: string): number {
   }
 }
 
-function binaryAdd(op1: string, op2: string): string {
+function binaryAdd(op1: string, op2: string, extendFunc: Function = signExtend): string {
   /**
    * Performs a binary addition of two binary strings.
    *
    * This function simulates the process of adding two binary numbers together
    * the same way it would be done by hand, processing each bit position from
-   * right to left and tracking the carry.
+   * right to left and tracking the carry. The operands are extended to the same 
+   * length using the provided extension function.
    *
    * @param op1 - First binary string operand
    * @param op2 - Second binary string operand
+   * @param extendFunc - Function used to extend operands to the same length (defaults to signExtend)
    * @returns The binary sum of the two operands as a string
    */
 
@@ -364,8 +381,8 @@ function binaryAdd(op1: string, op2: string): string {
 
   // Determine the maximum length and pad both operands to the same length
   const len: number = Math.max(op1.length, op2.length);
-  op1 = op1.padStart(len, "0");
-  op2 = op2.padStart(len, "0");
+  op1 = extendFunc(op1, len);
+  op2 = extendFunc(op2, len);
 
   // Process each bit from right to left (least to most significant bit)
   for (let i = len - 1; i >= 0; i--) {
@@ -389,7 +406,11 @@ function binaryAdd(op1: string, op2: string): string {
 
 function setRegisterBase(base: number) { 
   /**
-   * Sets the base for register value display (binary, octal, decimal, or hexadecimal).
+   * Sets the base for register value display in the simulator.
+   * 
+   * This function validates the provided base against supported numeric bases
+   * (binary, octal, decimal, or hexadecimal) and updates the global registerBase
+   * variable. If an invalid base is provided, it defaults to decimal.
    * 
    * @param base - The numeric base to use for register display (2, 8, 10, or 16)
    * @returns void - Updates the global registerBase variable
@@ -400,13 +421,16 @@ function setRegisterBase(base: number) {
 function updateRegisterDisplays() { 
   /**
    * Updates all register displays with current values in the selected base format.
-   * Displays register values with appropriate prefix:
-   * - Binary: 0b prefix
-   * - Octal: 0o prefix
-   * - Hexadecimal: 0x prefix
-   * - Decimal: no prefix (shows value in two's complement)
    * 
-   * @returns void - Modifies the DOM elements directly
+   * This function iterates through all register displays and formats the current
+   * register values according to the globally selected base (registerBase). Each
+   * value is displayed with the appropriate prefix:
+   * - Binary: 0b prefix (e.g., 0b10101)
+   * - Octal: 0o prefix (e.g., 0o7654)
+   * - Hexadecimal: 0x prefix (e.g., 0xABCD)
+   * - Decimal: no prefix, shown as signed value (e.g., -42)
+   * 
+   * @returns void - Modifies the DOM elements directly to display formatted register values
    */
   registerDisplays.forEach((registerDisplay, i) => {
     if (registerBase == Base.BINARY) { 
@@ -459,6 +483,7 @@ function zeroAllRegisters() {
    * This function iterates through all registers in the RISC-V register file,
    * including the program counter (PC), and sets their values to zero.
    * It's used to initialize or reset the register state before program execution.
+   * After resetting the registers, it updates the register displays.
    */
   for (let i: number = 0; i < XLEN + 1; i++) { 
     registers.set(i, zeroExtend("0"));
@@ -469,17 +494,22 @@ function zeroAllRegisters() {
 function addi(rd: string, rs1: string, imm: number): boolean {
   /**
    * Implements the ADDI instruction (Add Immediate).
+   * 
    * Adds a 12-bit signed immediate value to the value in the source register,
    * and stores the result in the destination register.
-   * If the immediate value exceeds the 12-bit signed range (-4096 to 4095),
-   * it will be truncated to fit within this range.
-   * The result is capped at 2^31-1 to prevent overflow.
+   * If the immediate value exceeds the 12-bit signed range (-2048 to 2047),
+   * it will be rejected with an error message.
    *
    * @param rd - The destination register name (e.g., "x1", "t0")
    * @param rs1 - The source register name containing the base value
-   * @param imm - The immediate value to add (will be truncated to 12-bit signed if needed)
-   * @returns true if the operation was successful, false if trying to modify register x0 (which is hardwired to 0)
+   * @param imm - The immediate value to add (must be in range -2048 to 2047)
+   * @returns true if the operation was successful, false otherwise
+   * @throws Error via raiseError function if immediate value is out of range
    */
+  if ((imm > 4095) || (imm < -4096)) { 
+    raiseError("ADDI: must have -4096 <= immediate <= 4095");
+    return false;
+  }
 
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const binarySum: string = binaryAdd(sourceValue, decimalToTwosComplement(imm, XLEN));
