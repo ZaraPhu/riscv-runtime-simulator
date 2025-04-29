@@ -135,7 +135,7 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
    * @param destructuredInstruction - Array containing the opcode and operands
    * @returns true if execution was successful (currently always returns true)
    */
-
+  console.log(destructuredInstruction);
   // Get the instruction format type based on the opcode (first element)
   const instructionType: OperandType[] | undefined = INSTRUCTION_TO_FORMAT.get(
     destructuredInstruction[0],
@@ -158,6 +158,7 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
       const iTypeCallable = I_INSTRUCTION_TO_FUNCTION.get(
         destructuredInstruction[0],
       )!;
+      console.log(iTypeCallable);
       status = iTypeCallable(
         destructuredInstruction[1], // Destination register
         destructuredInstruction[2], // Source register
@@ -170,6 +171,7 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
       const rTypeCallable = R_INSTRUCTION_TO_FUNCTION.get(
         destructuredInstruction[0],
       )!;
+      console.log(rTypeCallable);
       status = rTypeCallable(
         destructuredInstruction[1], // Destination register
         destructuredInstruction[2], // Source register 1
@@ -182,6 +184,7 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
       let uTypeCallable = U_INSTRUCTION_TO_FUNCTION.get(
         destructuredInstruction[0],
       )!;
+      console.log(uTypeCallable);
       status = uTypeCallable(
         destructuredInstruction[1], // Destination register
         destructuredInstruction[2], // Immediate value
@@ -193,6 +196,7 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
       let noneTypeCallable = NONE_INSTRUCTION_TO_FUNCTION.get(
         destructuredInstruction[0],
       )!;
+      console.log(noneTypeCallable);
       status = noneTypeCallable();
       break;
 

@@ -445,29 +445,26 @@ function updateRegisterDisplays() {
   });
 }
 
-function setRegister(rd: string, val: string, extendFunc: Function = signExtend): boolean {
+function setRegister(rd: string, val: string): boolean {
   /**
    * Sets a value to a specific register in the RISC-V register file.
    * 
    * If the target register is x0, the value will always be set to 0 as per RISC-V spec.
-   * For all other registers, the provided value will be extended to XLEN bits
-   * using the provided extension function (sign extension by default).
+   * For all other registers, the provided value will be set to the specified register.
    *
    * @param rd - The destination register name (e.g., "x0", "sp", "a0")
    * @param val - The binary string value to set in the register
-   * @param extendFunc - Function to extend the binary value to XLEN bits (defaults to signExtend)
    * @returns true if the register was successfully set, false if the input value had invalid length
    * @throws Error if the register name is not found in STRINGS_TO_REGISTERS map
    */
 
   if (val.length != XLEN) { 
-    console.error(`Invalid register value length: ${val.length} != ${XLEN}`);
     return false;
   }
 
   // Convert register name to register number
   const register: number = STRINGS_TO_REGISTERS.get(rd)!;
-  let valCleaned: string = extendFunc(((register == 0) ? "0" : val));
+  let valCleaned: string = ((register == 0) ? "0" : val);
 
   // register values are always stored as binary strings
   registers.set(register, valCleaned);
@@ -485,7 +482,9 @@ function zeroAllRegisters() {
    * It's used to initialize or reset the register state before program execution.
    * After resetting the registers, it updates the register displays.
    */
+  console.log("Zeroing all registers");
   for (let i: number = 0; i < XLEN + 1; i++) { 
+    console.log(zeroExtend("0"));
     registers.set(i, zeroExtend("0"));
   }
   updateRegisterDisplays();
@@ -513,7 +512,7 @@ function addi(rd: string, rs1: string, imm: number): boolean {
 
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const binarySum: string = binaryAdd(sourceValue, decimalToTwosComplement(imm, XLEN));
-  return setRegister(rd,binarySum);
+  return setRegister(rd, binarySum);
 }
 
 function slti(rd: string, rs1: string, imm: number): boolean {
