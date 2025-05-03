@@ -357,7 +357,7 @@ function zeroExtend(bits: string, len: number = XLEN): string {
    * @param len - The target length after extension (defaults to XLEN)
    * @returns A binary string padded with leading zeros to reach the specified length
    */
-  return bits.padStart(XLEN, "0");
+  return bits.padStart(len, "0");
 }
 
 function signExtend(bits: string, len: number = XLEN): string { 
@@ -372,7 +372,7 @@ function signExtend(bits: string, len: number = XLEN): string {
    * @param len - The target length after extension (defaults to XLEN)
    * @returns A binary string sign-extended to the specified length
    */
-  return bits.padStart(XLEN, bits.charAt(0))
+  return bits.padStart(len, bits.charAt(0))
 }
 
 function decimalToTwosComplement(val: number, numDigits: number): string {
@@ -467,20 +467,20 @@ function binaryAdd(op1: string, op2: string, extendFunc: Function = signExtend):
 
   // Determine the maximum length and pad both operands to the same length
   const len: number = Math.max(op1.length, op2.length);
-  op1 = extendFunc(op1, len);
-  op2 = extendFunc(op2, len);
+  const cleanedOp1: string = extendFunc(op1, len);
+  const cleanedOp2: string = extendFunc(op2, len);
 
   // Process each bit from right to left (least to most significant bit)
   for (let i = len - 1; i >= 0; i--) {
     // Get the bits at the current position
-    let num1: string = op1[i];
-    let num2: string = op2[i];
+    let num1: string = cleanedOp1.charAt(i);
+    let num2: string = cleanedOp2.charAt(i);
 
     // Calculate the current bit of the result
     // If the sum of the two bits plus the carry is even, the result bit is 0
     // Otherwise, the result bit is 1
     let decSum: number = parseInt(num1) + parseInt(num2) + Number(carry);
-    sum = (decSum % 2 == 0 ? "0" : "1") + sum;
+    sum = ((decSum % 2 == 0) ? "0" : "1") + sum;
 
     // Calculate the carry for the next position
     // If the sum of the two bits plus the carry is 2 or greater, the carry is 1
@@ -493,13 +493,13 @@ function binaryAdd(op1: string, op2: string, extendFunc: Function = signExtend):
 function binarySub(op1: string, op2: string, extendFunc: Function = signExtend) {
   /** does op1 - op2 which is the same as op1 + (- op2) **/
   const len: number = Math.max(op1.length, op2.length);
-  op1 = extendFunc(op1, len);
-  op2 = extendFunc(op2, len);
+  const cleanedOp1: string = extendFunc(op1, len);
+  const cleanedOp2: string = extendFunc(op2, len);
 
-  op2 = binaryAdd(op2, "1", signExtend); // first subtract 1 from the number
+  const op2Minus = binaryAdd(cleanedOp2, "1"); // first subtract 1 from the number
   let negOp2: string = "";
-  for (let i = len - 1; i >= 0; i--) {
-    negOp2 = ((op2[i] === "0") ? "1" : "0") + negOp2;
+  for (let i = len - 1; i >= 0; i--) { // then flip all the bits
+    negOp2 = ((op2Minus.charAt(i) == "0") ? "1" : "0") + negOp2;
   }
   return binaryAdd(op1, negOp2);
 }
@@ -648,24 +648,26 @@ function auipc(rd: string, imm: number): boolean {
 function add(rd: string, rs1: string, rs2: string): boolean {
   const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
-  const sumValue: string = binaryAdd(rs1Value, rs1Value);
+  const sumValue: string = binaryAdd(rs1Value, rs2Value);
   return setRegister(rd, signExtend(sumValue));
 }
 
 function sub(rd: string, rs1: string, rs2: string): boolean {
   const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
-  const subValue: string = binarySub(rs1Value, rs1Value);
+  const subValue: string = binarySub(rs1Value, rs2Value);
   return setRegister(rd, signExtend(subValue));
 }
 
 function slt(rd: string, rs1: string, rs2: string): boolean {
-  console.log("Called the slt function.");
-  return false;
+  const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
+  return setRegister(rd, zeroExtend(String(twosComplementToDecimal(rs1Value) < twosComplementToDecimal(rs2Value))));
 }
 function sltu(rd: string, rs1: string, rs2: string): boolean {
-  console.log("Called the sltu function.");
-  return false;
+  const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
+  return setRegister(rd, zeroExtend(String(parseInt(rs1Value) < parseInt(rs1Value))));
 }
 
 function sll(rd: string, rs1: string, rs2: string): boolean {
