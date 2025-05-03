@@ -17,10 +17,13 @@ const assembleButton = document.querySelector(
 const errorText = document.querySelector(
   "#error-text",
 ) as HTMLParagraphElement | null;
+const resetRegistersButton = document.querySelector(
+    "#reset-registers-btn"
+) as HTMLButtonElement | null;
 
 
 /*** Functions ***/
-function raiseError(message: string) {
+function raiseError(message: string = "") {
   /**
    * Displays an error message in the UI.
    * 
@@ -33,6 +36,10 @@ function raiseError(message: string) {
   if (errorText != null) {
     errorText.textContent = message;
   }
+}
+
+function clearError() {
+  raiseError();
 }
 
 function parseInput(instructionList: string[]): ParserResult {
@@ -135,12 +142,11 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
    * @param destructuredInstruction - Array containing the opcode and operands
    * @returns true if execution was successful (currently always returns true)
    */
-  console.log(destructuredInstruction);
   // Get the instruction format type based on the opcode (first element)
   const instructionType: OperandType[] | undefined = INSTRUCTION_TO_FORMAT.get(
     destructuredInstruction[0],
   );
-  // Validate instruction type
+  // Validate instruction type is not undefined
   if (!instructionType) {
     raiseError(
       `Invalid instruction type for opcode ${destructuredInstruction[0]}`,
@@ -150,7 +156,7 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
 
   // Initialize status
   let status: boolean = true;
-
+  
   // Execute the appropriate function based on instruction type
   switch (instructionType) {
     // I-type instructions (e.g., addi, lw) - typically use immediate values
@@ -158,7 +164,6 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
       const iTypeCallable = I_INSTRUCTION_TO_FUNCTION.get(
         destructuredInstruction[0],
       )!;
-      console.log(iTypeCallable);
       status = iTypeCallable(
         destructuredInstruction[1], // Destination register
         destructuredInstruction[2], // Source register
@@ -171,7 +176,6 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
       const rTypeCallable = R_INSTRUCTION_TO_FUNCTION.get(
         destructuredInstruction[0],
       )!;
-      console.log(rTypeCallable);
       status = rTypeCallable(
         destructuredInstruction[1], // Destination register
         destructuredInstruction[2], // Source register 1
@@ -184,7 +188,6 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
       let uTypeCallable = U_INSTRUCTION_TO_FUNCTION.get(
         destructuredInstruction[0],
       )!;
-      console.log(uTypeCallable);
       status = uTypeCallable(
         destructuredInstruction[1], // Destination register
         destructuredInstruction[2], // Immediate value
@@ -196,7 +199,6 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
       let noneTypeCallable = NONE_INSTRUCTION_TO_FUNCTION.get(
         destructuredInstruction[0],
       )!;
-      console.log(noneTypeCallable);
       status = noneTypeCallable();
       break;
 
@@ -220,8 +222,6 @@ hexadecimalCheck.addEventListener("click", () => { setRegisterBase(Base.HEXADECI
 
 // Add click event listener to the assemble button
 assembleButton?.addEventListener("click", () => {
-  // reset all registers to 0
-  zeroAllRegisters();
   
   // Split the assembly editor's content into an array of instructions
   const instructionsList: string[] = assemblyEditor?.value.split("\n") || [];
@@ -229,13 +229,12 @@ assembleButton?.addEventListener("click", () => {
   // Call the assembleInput function to validate the instructions
   // and store the result in status (true = valid, false = invalid)
   const parsingResult: ParserResult = parseInput(instructionsList);
-  
-  // Set all register to zero
 
   // If the assembly is invalid, log which line caused the error
   if (parsingResult.status == ParserStatus.ERR) {
     raiseError(parsingResult.errMessage);
   } else { 
+    clearError();
     setRegister("pc", "0");
     const instructionList = parsingResult.output;
     let status: boolean = true;
@@ -248,4 +247,9 @@ assembleButton?.addEventListener("click", () => {
       }
     }
   }
+});
+
+resetRegistersButton?.addEventListener("click", () => {
+  // reset all registers to 0
+  zeroAllRegisters();
 });

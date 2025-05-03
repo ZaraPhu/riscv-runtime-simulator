@@ -234,8 +234,9 @@ function binaryToHex(binVal: string): string {
    * @returns The hexadecimal representation of the input binary string
    */
   let hexVal = "";
-  for (let i = 0; i < binVal.length; i += 4) {
-    hexVal += parseInt(binVal.substring(i, i + 4), 2).toString(Base.HEXADECIMAL);
+  const binValCleaned: string = zeroExtend(binVal, Math.ceil(binVal.length / 4) * 4);
+  for (let i = 0; i < binValCleaned.length; i += 4) {
+    hexVal += parseInt(binValCleaned.substring(i, i + 4), 2).toString(Base.HEXADECIMAL);
   }
   return hexVal;
 }
@@ -252,13 +253,98 @@ function binaryToOctal(binVal: string): string {
    * @returns The octal representation of the input binary string
    */
   let octVal = "";
-  const binValCleaned: string = binVal.padStart(Math.ceil(binVal.length / 3) * 3, "0");
-  for (let i = 0; i < binVal.length; i += 3) {
+  const binValCleaned: string = zeroExtend(binVal, Math.ceil(binVal.length / 3) * 3);
+  for (let i = 0; i < binValCleaned.length; i += 3) {
     const octDigit = parseInt(binValCleaned.substring(i, i + 3), 2).toString(Base.OCTAL);
     octVal += octDigit;
   }
   return octVal;
 }
+
+function setRegisterBase(base: number) { 
+  /**
+   * Sets the base for register value display in the simulator.
+   * 
+   * This function validates the provided base against supported numeric bases
+   * (binary, octal, decimal, or hexadecimal) and updates the global registerBase
+   * variable. If an invalid base is provided, it defaults to decimal.
+   * 
+   * @param base - The numeric base to use for register display (2, 8, 10, or 16)
+   * @returns void - Updates the global registerBase variable
+   */
+  registerBase = [Base.BINARY, Base.OCTAL, Base.DECIMAL, Base.HEXADECIMAL].includes(base) ? base : Base.DECIMAL;
+}
+
+function updateRegisterDisplays() { 
+  /**
+   * Updates all register displays with current values in the selected base format.
+   * 
+   * This function iterates through all register displays and formats the current
+   * register values according to the globally selected base (registerBase). Each
+   * value is displayed with the appropriate prefix:
+   * - Binary: 0b prefix (e.g., 0b10101)
+   * - Octal: 0o prefix (e.g., 0o7654)
+   * - Hexadecimal: 0x prefix (e.g., 0xABCD)
+   * - Decimal: no prefix, shown as signed value (e.g., -42)
+   * 
+   * @returns void - Modifies the DOM elements directly to display formatted register values
+   */
+  registerDisplays.forEach((registerDisplay, i) => {
+    if (registerBase == Base.BINARY) { 
+      registerDisplay.textContent = `0b${registers.get(i)!}`;
+    } else if (registerBase == Base.OCTAL) {
+      registerDisplay.textContent = `0o${binaryToOctal(registers.get(i)!)}`;
+    } else if (registerBase == Base.HEXADECIMAL) {
+      registerDisplay.textContent = `0x${binaryToHex(registers.get(i)!)}`;
+    } else {
+      registerDisplay.textContent = `${twosComplementToDecimal(registers.get(i)!)}`;
+    }
+  });
+}
+
+function setRegister(rd: string, val: string): boolean {
+  /**
+   * Sets a value to a specific register in the RISC-V register file.
+   * 
+   * If the target register is x0, the value will always be set to 0 as per RISC-V spec.
+   * For all other registers, the provided value will be set to the specified register.
+   *
+   * @param rd - The destination register name (e.g., "x0", "sp", "a0")
+   * @param val - The binary string value to set in the register
+   * @returns true if the register was successfully set, false if the input value had invalid length
+   * @throws Error if the register name is not found in STRINGS_TO_REGISTERS map
+   */
+
+  if (val.length != XLEN) { 
+    return false;
+  }
+
+  // Convert register name to register number
+  const register: number = STRINGS_TO_REGISTERS.get(rd)!;
+  let valCleaned: string = ((register == 0) ? "0" : val);
+
+  // register values are always stored as binary strings
+  registers.set(register, valCleaned);
+
+  updateRegisterDisplays();
+  return true;
+}
+
+function zeroAllRegisters() { 
+  /**
+   * Resets all registers to zero.
+   * 
+   * This function iterates through all registers in the RISC-V register file,
+   * including the program counter (PC), and sets their values to zero.
+   * It's used to initialize or reset the register state before program execution.
+   * After resetting the registers, it updates the register displays.
+   */
+  for (let i: number = 0; i < XLEN + 1; i++) { 
+    registers.set(i, zeroExtend("0"));
+  }
+  updateRegisterDisplays();
+}
+
 
 function zeroExtend(bits: string, len: number = XLEN): string { 
   /**
@@ -309,12 +395,12 @@ function decimalToTwosComplement(val: number, numDigits: number): string {
 
   // Handle positive numbers directly - just return binary representation
   if (val >= 0) {
-    return val.toString(2).padStart(numDigits, "0");
+    return zeroExtend(val.toString(2));
   }
 
   // --- STEP 1: Get absolute value and convert to binary ---
   const absVal: number = Math.abs(val);
-  const bits: string = absVal.toString(2).padStart(numDigits, "0");
+  const bits: string = zeroExtend(absVal.toString(2));
 
   // --- STEP 2: Convert string to array and invert all bits ---
   let chars: string[] = [...bits];
@@ -399,95 +485,23 @@ function binaryAdd(op1: string, op2: string, extendFunc: Function = signExtend):
     // Calculate the carry for the next position
     // If the sum of the two bits plus the carry is 2 or greater, the carry is 1
     // Otherwise, the carry is 0
-    carry = decSum >= 2 ? 1 : 0;
+    carry = (decSum >= 2) ? 1 : 0;
   }
   return sum;
 }
 
-function setRegisterBase(base: number) { 
-  /**
-   * Sets the base for register value display in the simulator.
-   * 
-   * This function validates the provided base against supported numeric bases
-   * (binary, octal, decimal, or hexadecimal) and updates the global registerBase
-   * variable. If an invalid base is provided, it defaults to decimal.
-   * 
-   * @param base - The numeric base to use for register display (2, 8, 10, or 16)
-   * @returns void - Updates the global registerBase variable
-   */
-  registerBase = [Base.BINARY, Base.OCTAL, Base.DECIMAL, Base.HEXADECIMAL].includes(base) ? base : Base.DECIMAL;
-}
+function binarySub(op1: string, op2: string, extendFunc: Function = signExtend) {
+  /** does op1 - op2 which is the same as op1 + (- op2) **/
+  const len: number = Math.max(op1.length, op2.length);
+  op1 = extendFunc(op1, len);
+  op2 = extendFunc(op2, len);
 
-function updateRegisterDisplays() { 
-  /**
-   * Updates all register displays with current values in the selected base format.
-   * 
-   * This function iterates through all register displays and formats the current
-   * register values according to the globally selected base (registerBase). Each
-   * value is displayed with the appropriate prefix:
-   * - Binary: 0b prefix (e.g., 0b10101)
-   * - Octal: 0o prefix (e.g., 0o7654)
-   * - Hexadecimal: 0x prefix (e.g., 0xABCD)
-   * - Decimal: no prefix, shown as signed value (e.g., -42)
-   * 
-   * @returns void - Modifies the DOM elements directly to display formatted register values
-   */
-  registerDisplays.forEach((registerDisplay, i) => {
-    if (registerBase == Base.BINARY) { 
-      registerDisplay.textContent = `0b${registers.get(i)!}`;
-    } else if (registerBase == Base.OCTAL) {
-      registerDisplay.textContent = `0o${binaryToOctal(registers.get(i)!)}`;
-    } else if (registerBase == Base.HEXADECIMAL) {
-      registerDisplay.textContent = `0x${binaryToHex(registers.get(i)!)}`;
-    } else {
-      registerDisplay.textContent = `${twosComplementToDecimal(registers.get(i)!)}`;
-    }
-  });
-}
-
-function setRegister(rd: string, val: string): boolean {
-  /**
-   * Sets a value to a specific register in the RISC-V register file.
-   * 
-   * If the target register is x0, the value will always be set to 0 as per RISC-V spec.
-   * For all other registers, the provided value will be set to the specified register.
-   *
-   * @param rd - The destination register name (e.g., "x0", "sp", "a0")
-   * @param val - The binary string value to set in the register
-   * @returns true if the register was successfully set, false if the input value had invalid length
-   * @throws Error if the register name is not found in STRINGS_TO_REGISTERS map
-   */
-
-  if (val.length != XLEN) { 
-    return false;
+  op2 = binaryAdd(op2, "1", signExtend); // first subtract 1 from the number
+  let negOp2: string = "";
+  for (let i = len - 1; i >= 0; i--) {
+    negOp2 = ((op2[i] === "0") ? "1" : "0") + negOp2;
   }
-
-  // Convert register name to register number
-  const register: number = STRINGS_TO_REGISTERS.get(rd)!;
-  let valCleaned: string = ((register == 0) ? "0" : val);
-
-  // register values are always stored as binary strings
-  registers.set(register, valCleaned);
-
-  updateRegisterDisplays();
-  return true;
-}
-
-function zeroAllRegisters() { 
-  /**
-   * Resets all registers to zero.
-   * 
-   * This function iterates through all registers in the RISC-V register file,
-   * including the program counter (PC), and sets their values to zero.
-   * It's used to initialize or reset the register state before program execution.
-   * After resetting the registers, it updates the register displays.
-   */
-  console.log("Zeroing all registers");
-  for (let i: number = 0; i < XLEN + 1; i++) { 
-    console.log(zeroExtend("0"));
-    registers.set(i, zeroExtend("0"));
-  }
-  updateRegisterDisplays();
+  return binaryAdd(op1, negOp2);
 }
 
 function addi(rd: string, rs1: string, imm: number): boolean {
@@ -632,13 +646,17 @@ function auipc(rd: string, imm: number): boolean {
 }
 
 function add(rd: string, rs1: string, rs2: string): boolean {
-  console.log("Called the add function.");
-  return false;
+  const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
+  const sumValue: string = binaryAdd(rs1Value, rs1Value);
+  return setRegister(rd, signExtend(sumValue));
 }
 
 function sub(rd: string, rs1: string, rs2: string): boolean {
-  console.log("Called the sub function.");
-  return false;
+  const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
+  const subValue: string = binarySub(rs1Value, rs1Value);
+  return setRegister(rd, signExtend(subValue));
 }
 
 function slt(rd: string, rs1: string, rs2: string): boolean {
