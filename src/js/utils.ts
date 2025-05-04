@@ -303,7 +303,7 @@ function updateRegisterDisplays() {
   });
 }
 
-function setRegister(rd: string, val: string): boolean {
+function setRegister(rd: string, val: string, extendFunc: Function = signExtend): void {
   /**
    * Sets a value to a specific register in the RISC-V register file.
    * 
@@ -316,19 +316,13 @@ function setRegister(rd: string, val: string): boolean {
    * @throws Error if the register name is not found in STRINGS_TO_REGISTERS map
    */
 
-  if (val.length != XLEN) { 
-    return false;
-  }
-
   // Convert register name to register number
   const register: number = STRINGS_TO_REGISTERS.get(rd)!;
-  let valCleaned: string = ((register == 0) ? "0" : val);
+  let valCleaned: string = extendFunc((register == 0) ? "0" : val);
 
   // register values are always stored as binary strings
   registers.set(register, valCleaned);
-
   updateRegisterDisplays();
-  return true;
 }
 
 function zeroAllRegisters() { 
@@ -505,7 +499,7 @@ function binarySub(op1: string, op2: string, extendFunc: Function = signExtend) 
   return binaryAdd(op1, negOp2);
 }
 
-function addi(rd: string, rs1: string, imm: number): boolean {
+function addi(rd: string, rs1: string, imm: number): string {
   /**
    * Implements the ADDI instruction (Add Immediate).
    * 
@@ -520,19 +514,28 @@ function addi(rd: string, rs1: string, imm: number): boolean {
    * @returns true if the operation was successful, false otherwise
    * @throws Error via raiseError function if immediate value is out of range
    */
-  if ((imm > 4095) || (imm < -4096)) { 
-    raiseError("ADDI: must have -4096 <= immediate <= 4095");
-    return false;
-  }
+  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  let machineCode: string = immBin;
 
-  const machineCode: string = "";
+  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  machineCode = machineCode + sourceRegisterBin;
+
+  machineCode = machineCode + "000";
+
+  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  machineCode = machineCode + destRegisterBin;
+
+  const opcode: string = zeroExtend("0", 7);
+  machineCode = machineCode + opcode;
 
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const binarySum: string = binaryAdd(sourceValue, decimalToTwosComplement(imm, XLEN));
-  return setRegister(rd, binarySum);
+  setRegister(rd, binarySum);
+
+  return machineCode;
 }
 
-function slti(rd: string, rs1: string, imm: number): boolean {
+function slti(rd: string, rs1: string, imm: number): string {
   /**
    * Implements the SLTI instruction (Set Less Than Immediate).
    * Sets the destination register to 1 if the value in the source register is less than
@@ -543,12 +546,27 @@ function slti(rd: string, rs1: string, imm: number): boolean {
    * @param imm - The immediate value to compare against
    * @returns true if the operation was successful, false if trying to modify register x0
    */
+  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  let machineCode: string = immBin;
+
+  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  machineCode = machineCode + sourceRegisterBin;
+
+  machineCode = machineCode + "001";
+
+  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  machineCode = machineCode + destRegisterBin;
+
+  const opcode: string = zeroExtend("0", 7);
+  machineCode = machineCode + opcode;
+
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  // sign extending a 12 bit immediate value to XLEN bits is just a two's complement representation
-  return setRegister(rd, (twosComplementToDecimal(sourceValue) < imm) ? "1" : "0");
+  setRegister(rd, (twosComplementToDecimal(sourceValue) < imm) ? "1" : "0");
+
+  return machineCode;
 }
 
-function sltiu(rd: string, rs1: string, imm: number): boolean {
+function sltiu(rd: string, rs1: string, imm: number): string {
   /**
    * Implements the SLTIU instruction (Set Less Than Immediate Unsigned).
    * Sets the destination register to 1 if the value in the source register is less than
@@ -559,13 +577,29 @@ function sltiu(rd: string, rs1: string, imm: number): boolean {
    * @param imm - The immediate value to compare against
    * @returns true if the operation was successful, false if trying to modify register x0
    */
+  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  let machineCode: string = immBin;
+
+  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  machineCode = machineCode + sourceRegisterBin;
+
+  machineCode = machineCode + "010";
+
+  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  machineCode = machineCode + destRegisterBin;
+
+  const opcode: string = zeroExtend("0", 7);
+  machineCode = machineCode + opcode;
+
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   // first sign extend imm to XLEN bits, then treat as unsigned number
   const immUnsigned: number = parseInt(zeroExtend(decimalToTwosComplement(imm, 12)));
-  return setRegister(rd, (twosComplementToDecimal(sourceValue) < immUnsigned) ? "1" : "0");
+  setRegister(rd, (twosComplementToDecimal(sourceValue) < immUnsigned) ? "1" : "0");
+
+  return machineCode;
 }
 
-function andi(rd: string, rs1: string, imm: number): boolean {
+function andi(rd: string, rs1: string, imm: number): string {
   /**
    * Implements the ANDI instruction (AND Immediate).
    * Performs a bitwise AND operation between the value in the source register
@@ -582,10 +616,11 @@ function andi(rd: string, rs1: string, imm: number): boolean {
   for (let i: number = 0; i < XLEN; i++) {
     result[i] = (immBin[i] === "1") && (sourceBin[i] === "1") ? "1" : "0";
   }
-  return setRegister(rd, result.join(""));
+  setRegister(rd, result.join(""));
+  return "";
 }
 
-function ori(rd: string, rs1: string, imm: number): boolean {
+function ori(rd: string, rs1: string, imm: number): string {
   /**
    * Implements the ORI instruction (OR Immediate).
    * Performs a bitwise OR operation between the value in the source register
@@ -602,10 +637,11 @@ function ori(rd: string, rs1: string, imm: number): boolean {
   for (let i: number = 0; i < XLEN; i++) { 
     result[i] = (immBin[i] === "1") || (sourceBin[i] === "1") ? "1" : "0";
   }
-  return setRegister(rd, result.join(""));
+  setRegister(rd, result.join(""));
+  return "";
 }
 
-function xori(rd: string, rs1: string, imm: number): boolean {
+function xori(rd: string, rs1: string, imm: number): string {
   /**
    * Implements the XORI instruction (XOR Immediate).
    * Performs a bitwise XOR operation between the value in the source register
@@ -622,34 +658,35 @@ function xori(rd: string, rs1: string, imm: number): boolean {
   for (let i: number = 0; i < XLEN; i++) { 
     result[i] = !(immBin[i] === sourceBin[i]) ? "1" : "0";
   }
-  return setRegister(rd, result.join(""));
+  setRegister(rd, result.join(""));
+  return "";
 }
 
-function slli(rd: string, rs1: string, imm: number): boolean {
-  console.log("Called slli function.");
-  return false;
+function slli(rd: string, rs1: string, imm: number): string {
+  return "";
 }
-function srli(rd: string, rs1: string, imm: number): boolean {
+function srli(rd: string, rs1: string, imm: number): string {
   console.log("Called srli function.");
-  return false;
+  return "";
 }
 
-function srai(rd: string, rs1: string, imm: number): boolean {
+function srai(rd: string, rs1: string, imm: number): string {
   console.log("Called srai function.");
-  return false;
+  return "";
 }
 
-function lui(rd: string, imm: number): boolean {
+function lui(rd: string, imm: number): string {
   const bits: string[] = decimalToTwosComplement(imm).split("");
   for (let i = 0; i < XLEN; i++) {
     if ((XLEN - i) <= 12) {
       bits[i] = "0";
     }
   }
-  return setRegister(rd, bits.join(""));
+  setRegister(rd, bits.join(""));
+  return "";
 }
 
-function auipc(rd: string, imm: number, lineNumber: number): boolean {
+function auipc(rd: string, imm: number, lineNumber: number): string{
   const bits: string[] = decimalToTwosComplement(imm).split("");
   for (let i = 0; i < XLEN; i++) {
     if ((XLEN - i) <= 12) {
@@ -657,42 +694,47 @@ function auipc(rd: string, imm: number, lineNumber: number): boolean {
     }
   }
   const result: string = binaryAdd(bits.join(""), decimalToTwosComplement(imm));
-  return setRegister(rd, result);
+  setRegister(rd, result);
+  return "";
 }
 
-function add(rd: string, rs1: string, rs2: string): boolean {
+function add(rd: string, rs1: string, rs2: string): string {
   const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
   const sumValue: string = binaryAdd(rs1Value, rs2Value);
-  return setRegister(rd, signExtend(sumValue));
+  setRegister(rd, signExtend(sumValue));
+  return "";
 }
 
-function sub(rd: string, rs1: string, rs2: string): boolean {
+function sub(rd: string, rs1: string, rs2: string): string {
   const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
   const subValue: string = binarySub(rs1Value, rs2Value);
-  return setRegister(rd, signExtend(subValue));
+  setRegister(rd, signExtend(subValue));
+  return "";
 }
 
-function slt(rd: string, rs1: string, rs2: string): boolean {
+function slt(rd: string, rs1: string, rs2: string): string {
   const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
-  return setRegister(rd, zeroExtend(String(twosComplementToDecimal(rs1Value) < twosComplementToDecimal(rs2Value))));
+  setRegister(rd, zeroExtend(String(twosComplementToDecimal(rs1Value) < twosComplementToDecimal(rs2Value))));
+  return "";
 }
-function sltu(rd: string, rs1: string, rs2: string): boolean {
+function sltu(rd: string, rs1: string, rs2: string): string {
   const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
-  return setRegister(rd, zeroExtend(String(parseInt(rs1Value) < parseInt(rs1Value))));
+  setRegister(rd, zeroExtend(String(parseInt(rs1Value) < parseInt(rs1Value))));
+  return "";
 }
 
-function sll(rd: string, rs1: string, rs2: string): boolean {
+function sll(rd: string, rs1: string, rs2: string): string {
   console.log("Called the sll function.");
-  return false;
+  return "";
 }
 
-function srl(rd: string, rs1: string, rs2: string): boolean {
+function srl(rd: string, rs1: string, rs2: string): string {
   console.log("Called the srl function.");
-  return false;
+  return "";
 }
 
 
