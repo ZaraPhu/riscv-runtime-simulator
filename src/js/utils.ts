@@ -221,6 +221,7 @@ const NONE_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["NOP", () => {}],
 ]);
 
+
 /*** Functions ***/
 function binaryToHex(binVal: string): string {
   /**
@@ -375,7 +376,7 @@ function signExtend(bits: string, len: number = XLEN): string {
   return bits.padStart(len, bits.charAt(0))
 }
 
-function decimalToTwosComplement(val: number, numDigits: number): string {
+function decimalToTwosComplement(val: number, numDigits: number = XLEN): string {
   /**
    * Converts a decimal number to its two's complement binary representation.
    *
@@ -524,6 +525,8 @@ function addi(rd: string, rs1: string, imm: number): boolean {
     return false;
   }
 
+  const machineCode: string = "";
+
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const binarySum: string = binaryAdd(sourceValue, decimalToTwosComplement(imm, XLEN));
   return setRegister(rd, binarySum);
@@ -557,7 +560,8 @@ function sltiu(rd: string, rs1: string, imm: number): boolean {
    * @returns true if the operation was successful, false if trying to modify register x0
    */
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  const immUnsigned: number = twosComplementToDecimal(zeroExtend(decimalToTwosComplement(imm, 12)));
+  // first sign extend imm to XLEN bits, then treat as unsigned number
+  const immUnsigned: number = parseInt(zeroExtend(decimalToTwosComplement(imm, 12)));
   return setRegister(rd, (twosComplementToDecimal(sourceValue) < immUnsigned) ? "1" : "0");
 }
 
@@ -636,13 +640,24 @@ function srai(rd: string, rs1: string, imm: number): boolean {
 }
 
 function lui(rd: string, imm: number): boolean {
-  console.log("Called lui function.");
-  return false;
+  const bits: string[] = decimalToTwosComplement(imm).split("");
+  for (let i = 0; i < XLEN; i++) {
+    if ((XLEN - i) <= 12) {
+      bits[i] = "0";
+    }
+  }
+  return setRegister(rd, bits.join(""));
 }
 
-function auipc(rd: string, imm: number): boolean {
-  console.log("Called auipc function.");
-  return false;
+function auipc(rd: string, imm: number, lineNumber: number): boolean {
+  const bits: string[] = decimalToTwosComplement(imm).split("");
+  for (let i = 0; i < XLEN; i++) {
+    if ((XLEN - i) <= 12) {
+      bits[i] = "0";
+    }
+  }
+  const result: string = binaryAdd(bits.join(""), decimalToTwosComplement(imm));
+  return setRegister(rd, result);
 }
 
 function add(rd: string, rs1: string, rs2: string): boolean {
