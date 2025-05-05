@@ -202,6 +202,13 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
       status = noneTypeCallable();
       break;
 
+    case PSEUDO_TYPE:
+      let pseudoTypeCallable = PSEUDO_INSTRUCTION_TO_FUNCTION.get(
+        destructuredInstruction[0],
+      )!;
+      status = pseudoTypeCallable();
+      break;
+
     // Handle unexpected instruction types
     default:
       console.log("Got an invalid instruction type.");

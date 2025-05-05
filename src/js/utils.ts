@@ -221,6 +221,11 @@ const NONE_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["NOP", () => {}],
 ]);
 
+const PSEUDO_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
+  ["MV", mv],
+  ["SEQZ", seqz]
+]);
+
 
 /*** Functions ***/
 function binaryToHex(binVal: string): string {
@@ -525,7 +530,7 @@ function addi(rd: string, rs1: string, imm: number): string {
   const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
   machineCode = machineCode + destRegisterBin;
 
-  const opcode: string = zeroExtend("0", 7);
+  const opcode: string = zeroExtend("0", 7); // todo: figure out opcodes
   machineCode = machineCode + opcode;
 
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
@@ -533,6 +538,10 @@ function addi(rd: string, rs1: string, imm: number): string {
   setRegister(rd, binarySum);
 
   return machineCode;
+}
+
+function mv(rd: string, rs: string): string {
+  return addi(rd, rs, 0);
 }
 
 function slti(rd: string, rs1: string, imm: number): string {
@@ -557,7 +566,7 @@ function slti(rd: string, rs1: string, imm: number): string {
   const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
   machineCode = machineCode + destRegisterBin;
 
-  const opcode: string = zeroExtend("0", 7);
+  const opcode: string = zeroExtend("0", 7); // todo: figure out opcodes
   machineCode = machineCode + opcode;
 
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
@@ -588,7 +597,7 @@ function sltiu(rd: string, rs1: string, imm: number): string {
   const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
   machineCode = machineCode + destRegisterBin;
 
-  const opcode: string = zeroExtend("0", 7);
+  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
@@ -597,6 +606,10 @@ function sltiu(rd: string, rs1: string, imm: number): string {
   setRegister(rd, (twosComplementToDecimal(sourceValue) < immUnsigned) ? "1" : "0");
 
   return machineCode;
+}
+
+function seqz(rd: string, rs: string): string {
+  return sltiu(rd, rs, 1);
 }
 
 function andi(rd: string, rs1: string, imm: number): string {
@@ -610,14 +623,28 @@ function andi(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value for the AND operation
    * @returns true if the operation was successful, false if trying to modify register x0
    */
+  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  let machineCode: string = immBin;
+
+  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  machineCode = machineCode + sourceRegisterBin;
+
+  machineCode = machineCode + "011";
+
+  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  machineCode = machineCode + destRegisterBin;
+
+  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
+  machineCode = machineCode + opcode;
+
   const sourceBin: string[] = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!.split("");
-  const immBin: string[] = decimalToTwosComplement(imm, XLEN).split("");
+  const immBinArr: string[] = immBin.split("");
   const result: string[] = [];
   for (let i: number = 0; i < XLEN; i++) {
-    result[i] = (immBin[i] === "1") && (sourceBin[i] === "1") ? "1" : "0";
+    result[i] = (immBinArr[i] === "1") && (sourceBin[i] === "1") ? "1" : "0";
   }
   setRegister(rd, result.join(""));
-  return "";
+  return machineCode;
 }
 
 function ori(rd: string, rs1: string, imm: number): string {
@@ -631,14 +658,28 @@ function ori(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value for the OR operation
    * @returns true if the operation was successful, false if trying to modify register x0
    */
+  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  let machineCode: string = immBin;
+
+  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  machineCode = machineCode + sourceRegisterBin;
+
+  machineCode = machineCode + "100";
+
+  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  machineCode = machineCode + destRegisterBin;
+
+  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
+  machineCode = machineCode + opcode;
+
   const sourceBin: string[] = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!.split("");
-  const immBin: string[] = decimalToTwosComplement(imm, XLEN).split("");
+  const immBinArr: string[] = decimalToTwosComplement(imm, XLEN).split("");
   const result: string[] = [];
   for (let i: number = 0; i < XLEN; i++) { 
-    result[i] = (immBin[i] === "1") || (sourceBin[i] === "1") ? "1" : "0";
+    result[i] = (immBinArr[i] === "1") || (sourceBin[i] === "1") ? "1" : "0";
   }
   setRegister(rd, result.join(""));
-  return "";
+  return machineCode;
 }
 
 function xori(rd: string, rs1: string, imm: number): string {
@@ -652,27 +693,99 @@ function xori(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value for the XOR operation
    * @returns true if the operation was successful, false if trying to modify register x0
    */
+  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  let machineCode: string = immBin;
+
+  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  machineCode = machineCode + sourceRegisterBin;
+
+  machineCode = machineCode + "101";
+
+  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  machineCode = machineCode + destRegisterBin;
+
+  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
+  machineCode = machineCode + opcode;
+
   const sourceBin: string[] = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!.split("");
-  const immBin: string[] = decimalToTwosComplement(imm, XLEN).split("");
+  const immBinArr: string[] = decimalToTwosComplement(imm, XLEN).split("");
   const result: string[] = [];
   for (let i: number = 0; i < XLEN; i++) { 
-    result[i] = !(immBin[i] === sourceBin[i]) ? "1" : "0";
+    result[i] = !(immBinArr[i] === sourceBin[i]) ? "1" : "0";
   }
   setRegister(rd, result.join(""));
-  return "";
+  return machineCode;
 }
 
 function slli(rd: string, rs1: string, imm: number): string {
-  return "";
+  const immBin: string = imm.toString(2).slice(-5);
+  let machineCode: string = zeroExtend(immBin, 12);
+
+  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  machineCode = machineCode + sourceRegisterBin;
+
+  machineCode = machineCode + "000";
+
+  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  machineCode = machineCode + destRegisterBin;
+
+  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
+  machineCode = machineCode + opcode;
+
+  const immVal: number = parseInt(immBin);
+  const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const result: string = (sourceBin + zeroExtend("0", immVal)).slice(XLEN);
+
+  setRegister(rd, result);
+
+  return machineCode; 
 }
 function srli(rd: string, rs1: string, imm: number): string {
-  console.log("Called srli function.");
-  return "";
+  const immBin: string = imm.toString(2).slice(-5);
+  let machineCode: string = zeroExtend(immBin, 12);
+
+  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  machineCode = machineCode + sourceRegisterBin;
+
+  machineCode = machineCode + "010";
+
+  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  machineCode = machineCode + destRegisterBin;
+
+  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
+  machineCode = machineCode + opcode;
+
+  const immVal: number = parseInt(immBin);
+  const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const result: string = (zeroExtend("0", immVal) + sourceBin).substring(0, XLEN);
+
+  setRegister(rd, result);
+
+  return machineCode; 
 }
 
 function srai(rd: string, rs1: string, imm: number): string {
-  console.log("Called srai function.");
-  return "";
+  const immBin: string = imm.toString(2).slice(-5);
+  let machineCode: string = "01" + zeroExtend(immBin, 10);
+
+  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  machineCode = machineCode + sourceRegisterBin;
+
+  machineCode = machineCode + "011";
+
+  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  machineCode = machineCode + destRegisterBin;
+
+  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
+  machineCode = machineCode + opcode;
+
+  const immVal: number = parseInt(immBin);
+  const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const result: string = (zeroExtend("0", immVal) + sourceBin).substring(0, XLEN);
+
+  setRegister(rd, result);
+
+  return machineCode; 
 }
 
 function lui(rd: string, imm: number): string {
