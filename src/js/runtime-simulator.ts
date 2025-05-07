@@ -206,7 +206,10 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
       let pseudoTypeCallable = PSEUDO_INSTRUCTION_TO_FUNCTION.get(
         destructuredInstruction[0],
       )!;
-      status = pseudoTypeCallable();
+      status = pseudoTypeCallable(
+        destructuredInstruction[1],
+        destructuredInstruction[2]
+      );
       break;
 
     // Handle unexpected instruction types
