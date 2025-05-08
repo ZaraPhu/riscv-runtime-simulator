@@ -6,7 +6,6 @@ Author: Zara Phukan.
 Creation Date: April 15, 2025.
 */
 
-
 /*****************************************************************************
  * RISC-V SIMULATOR CONSTANTS AND DEFINITIONS
  *****************************************************************************/
@@ -21,7 +20,7 @@ const XLEN: number = 32; // XLEN=32 for RV32I instruction set architecture
  * Enumerations and Types
  */
 // Number base for register value representation
-enum Base { 
+enum Base {
   BINARY = 2,
   OCTAL = 8,
   DECIMAL = 10,
@@ -33,21 +32,21 @@ let registerBase: number = Base.BINARY;
 
 // Operand types for instruction formats
 enum OperandType {
-  IMMEDIATE,  // Immediate values (constants)
-  REGISTER,   // Register references
+  IMMEDIATE, // Immediate values (constants)
+  REGISTER, // Register references
 }
 
 // Parser status codes
 enum ParserStatus {
-  OK,   // Parsing successful
-  ERR,  // Error occurred during parsing
+  OK, // Parsing successful
+  ERR, // Error occurred during parsing
 }
 
 // Structure for parser results
 interface ParserResult {
-  output: string[][];              // Processed instructions
-  status: ParserStatus.OK | ParserStatus.ERR;  // Result status
-  errMessage: string               // Error message if applicable
+  output: string[][]; // Processed instructions
+  status: ParserStatus.OK | ParserStatus.ERR; // Result status
+  errMessage: string; // Error message if applicable
 }
 
 /**
@@ -56,31 +55,32 @@ interface ParserResult {
  */
 // I-Type: Register-Immediate instructions (e.g., ADDI, SLTI)
 const I_TYPE: OperandType[] = [
-  OperandType.REGISTER,  // Destination register
-  OperandType.REGISTER,  // Source register
+  OperandType.REGISTER, // Destination register
+  OperandType.REGISTER, // Source register
   OperandType.IMMEDIATE, // Immediate value
 ];
 
 // U-Type: Upper immediate instructions (e.g., LUI, AUIPC)
 const U_TYPE: OperandType[] = [
-  OperandType.REGISTER,  // Destination register
+  OperandType.REGISTER, // Destination register
   OperandType.IMMEDIATE, // Immediate value (upper 20 bits)
 ];
 
 // R-Type: Register-Register operations (e.g., ADD, SUB)
 const R_TYPE: OperandType[] = [
-  OperandType.REGISTER,  // Destination register
-  OperandType.REGISTER,  // Source register 1
-  OperandType.REGISTER,  // Source register 2
+  OperandType.REGISTER, // Destination register
+  OperandType.REGISTER, // Source register 1
+  OperandType.REGISTER, // Source register 2
 ];
 
 // Special instruction type formats
-const NONE_TYPE: OperandType[] = [];  // No operands (e.g., NOP)
-const PSEUDO_TYPE: OperandType[] = [  // Pseudo-instructions with 2 registers
+const NONE_TYPE: OperandType[] = []; // No operands (e.g., NOP)
+const PSEUDO_TYPE: OperandType[] = [
+  // Pseudo-instructions with 2 registers
   OperandType.REGISTER,
-  OperandType.REGISTER
+  OperandType.REGISTER,
 ];
-const J_TYPE: OperandType[] = [];     // Jump instructions
+const J_TYPE: OperandType[] = []; // Jump instructions
 
 /**
  * Register System
@@ -94,7 +94,7 @@ const registers: Map<number, string> = new Map(
  * Memory System
  */
 const memory: Map<number, string> = new Map(
-  Array.from({ length: 256 }, (_, i) => [i, zeroExtend("0")])
+  Array.from({ length: 256 }, (_, i) => [i, zeroExtend("0")]),
 );
 
 /**
@@ -104,29 +104,53 @@ const memory: Map<number, string> = new Map(
  */
 const STRINGS_TO_REGISTERS: ReadonlyMap<string, number> = new Map([
   // General Register Names (x0-x31)
-  ["x0", 0],  ["x1", 1],  ["x2", 2],  ["x3", 3],
-  ["x4", 4],  ["x5", 5],  ["x6", 6],  ["x7", 7],
-  ["x8", 8],  ["x9", 9],  ["x10", 10], ["x11", 11],
-  ["x12", 12], ["x13", 13], ["x14", 14], ["x15", 15],
-  ["x16", 16], ["x17", 17], ["x18", 18], ["x19", 19],
-  ["x20", 20], ["x21", 21], ["x22", 22], ["x23", 23],
-  ["x24", 24], ["x25", 25], ["x26", 26], ["x27", 27],
-  ["x28", 28], ["x29", 29], ["x30", 30], ["x31", 31],
-  ["pc", 32],  // Program Counter
+  ["x0", 0],
+  ["x1", 1],
+  ["x2", 2],
+  ["x3", 3],
+  ["x4", 4],
+  ["x5", 5],
+  ["x6", 6],
+  ["x7", 7],
+  ["x8", 8],
+  ["x9", 9],
+  ["x10", 10],
+  ["x11", 11],
+  ["x12", 12],
+  ["x13", 13],
+  ["x14", 14],
+  ["x15", 15],
+  ["x16", 16],
+  ["x17", 17],
+  ["x18", 18],
+  ["x19", 19],
+  ["x20", 20],
+  ["x21", 21],
+  ["x22", 22],
+  ["x23", 23],
+  ["x24", 24],
+  ["x25", 25],
+  ["x26", 26],
+  ["x27", 27],
+  ["x28", 28],
+  ["x29", 29],
+  ["x30", 30],
+  ["x31", 31],
+  ["pc", 32], // Program Counter
 
   // ABI Register Names
   ["zero", 0], // Hard-wired zero
-  ["ra", 1],   // Return address
-  ["sp", 2],   // Stack pointer
-  ["gp", 3],   // Global pointer
-  ["tp", 4],   // Thread pointer
-  ["t0", 5],   // Temporary registers
+  ["ra", 1], // Return address
+  ["sp", 2], // Stack pointer
+  ["gp", 3], // Global pointer
+  ["tp", 4], // Thread pointer
+  ["t0", 5], // Temporary registers
   ["t1", 6],
   ["t2", 7],
-  ["fp", 8],   // Frame pointer (alias for s0)
-  ["s0", 8],   // Saved registers
+  ["fp", 8], // Frame pointer (alias for s0)
+  ["s0", 8], // Saved registers
   ["s1", 9],
-  ["a0", 10],  // Function argument/return registers
+  ["a0", 10], // Function argument/return registers
   ["a1", 11],
   ["a2", 12],
   ["a3", 13],
@@ -134,7 +158,7 @@ const STRINGS_TO_REGISTERS: ReadonlyMap<string, number> = new Map([
   ["a5", 15],
   ["a6", 16],
   ["a7", 17],
-  ["s2", 18],  // More saved registers
+  ["s2", 18], // More saved registers
   ["s3", 19],
   ["s4", 20],
   ["s5", 21],
@@ -144,7 +168,7 @@ const STRINGS_TO_REGISTERS: ReadonlyMap<string, number> = new Map([
   ["s9", 25],
   ["s10", 26],
   ["s11", 27],
-  ["t3", 28],  // More temporary registers
+  ["t3", 28], // More temporary registers
   ["t4", 29],
   ["t5", 30],
   ["t6", 31],
@@ -156,35 +180,35 @@ const STRINGS_TO_REGISTERS: ReadonlyMap<string, number> = new Map([
  */
 const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   // I-Type instructions
-  ["ADDI", I_TYPE],   // Add immediate
-  ["SLTI", I_TYPE],   // Set less than immediate
-  ["SLTIU", I_TYPE],  // Set less than immediate unsigned
-  ["ANDI", I_TYPE],   // AND immediate
-  ["ORI", I_TYPE],    // OR immediate
-  ["XORI", I_TYPE],   // XOR immediate
-  ["SLLI", I_TYPE],   // Shift left logical immediate
-  ["SRLI", I_TYPE],   // Shift right logical immediate
-  ["SRAI", I_TYPE],   // Shift right arithmetic immediate
+  ["ADDI", I_TYPE], // Add immediate
+  ["SLTI", I_TYPE], // Set less than immediate
+  ["SLTIU", I_TYPE], // Set less than immediate unsigned
+  ["ANDI", I_TYPE], // AND immediate
+  ["ORI", I_TYPE], // OR immediate
+  ["XORI", I_TYPE], // XOR immediate
+  ["SLLI", I_TYPE], // Shift left logical immediate
+  ["SRLI", I_TYPE], // Shift right logical immediate
+  ["SRAI", I_TYPE], // Shift right arithmetic immediate
 
   // U-Type instructions
-  ["LUI", U_TYPE],    // Load upper immediate
-  ["AUIPC", U_TYPE],  // Add upper immediate to PC
+  ["LUI", U_TYPE], // Load upper immediate
+  ["AUIPC", U_TYPE], // Add upper immediate to PC
 
   // R-Type instructions
-  ["ADD", R_TYPE],    // Add
-  ["SUB", R_TYPE],    // Subtract
-  ["SLT", R_TYPE],    // Set less than
-  ["SLTU", R_TYPE],   // Set less than unsigned
-  ["SLL", R_TYPE],    // Shift left logical
-  ["SRL", R_TYPE],    // Shift right logical
+  ["ADD", R_TYPE], // Add
+  ["SUB", R_TYPE], // Subtract
+  ["SLT", R_TYPE], // Set less than
+  ["SLTU", R_TYPE], // Set less than unsigned
+  ["SLL", R_TYPE], // Shift left logical
+  ["SRL", R_TYPE], // Shift right logical
 
   // Special instructions
-  ["NOP", NONE_TYPE],   // No operation
-  ["MV", PSEUDO_TYPE],  // Move register to register
+  ["NOP", NONE_TYPE], // No operation
+  ["MV", PSEUDO_TYPE], // Move register to register
   ["SEQZ", PSEUDO_TYPE], // Set if equal to zero
-  ["NOT", PSEUDO_TYPE],  // Bitwise NOT
-  ["JAL", J_TYPE],      // Jump and link
-  ["JALR", J_TYPE],     // Jump and link register
+  ["NOT", PSEUDO_TYPE], // Bitwise NOT
+  ["JAL", J_TYPE], // Jump and link
+  ["JALR", J_TYPE], // Jump and link register
 ]);
 
 // I_INSTRUCTION_TO_FUNCTION is a map of all the I-type instructions to their corresponding functions
@@ -223,9 +247,8 @@ const NONE_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
 
 const PSEUDO_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["MV", mv],
-  ["SEQZ", seqz]
+  ["SEQZ", seqz],
 ]);
-
 
 /*** Functions ***/
 function binaryToHex(binVal: string): string {
@@ -240,9 +263,14 @@ function binaryToHex(binVal: string): string {
    * @returns The hexadecimal representation of the input binary string
    */
   let hexVal = "";
-  const binValCleaned: string = zeroExtend(binVal, Math.ceil(binVal.length / 4) * 4);
+  const binValCleaned: string = zeroExtend(
+    binVal,
+    Math.ceil(binVal.length / 4) * 4,
+  );
   for (let i = 0; i < binValCleaned.length; i += 4) {
-    hexVal += parseInt(binValCleaned.substring(i, i + 4), 2).toString(Base.HEXADECIMAL);
+    hexVal += parseInt(binValCleaned.substring(i, i + 4), 2).toString(
+      Base.HEXADECIMAL,
+    );
   }
   return hexVal;
 }
@@ -259,32 +287,44 @@ function binaryToOctal(binVal: string): string {
    * @returns The octal representation of the input binary string
    */
   let octVal = "";
-  const binValCleaned: string = zeroExtend(binVal, Math.ceil(binVal.length / 3) * 3);
+  const binValCleaned: string = zeroExtend(
+    binVal,
+    Math.ceil(binVal.length / 3) * 3,
+  );
   for (let i = 0; i < binValCleaned.length; i += 3) {
-    const octDigit = parseInt(binValCleaned.substring(i, i + 3), 2).toString(Base.OCTAL);
+    const octDigit = parseInt(binValCleaned.substring(i, i + 3), 2).toString(
+      Base.OCTAL,
+    );
     octVal += octDigit;
   }
   return octVal;
 }
 
-function setRegisterBase(base: number) { 
+function setRegisterBase(base: number) {
   /**
    * Sets the base for register value display in the simulator.
-   * 
+   *
    * This function validates the provided base against supported numeric bases
    * (binary, octal, decimal, or hexadecimal) and updates the global registerBase
    * variable. If an invalid base is provided, it defaults to decimal.
-   * 
+   *
    * @param base - The numeric base to use for register display (2, 8, 10, or 16)
    * @returns void - Updates the global registerBase variable
    */
-  registerBase = [Base.BINARY, Base.OCTAL, Base.DECIMAL, Base.HEXADECIMAL].includes(base) ? base : Base.DECIMAL;
+  registerBase = [
+    Base.BINARY,
+    Base.OCTAL,
+    Base.DECIMAL,
+    Base.HEXADECIMAL,
+  ].includes(base)
+    ? base
+    : Base.DECIMAL;
 }
 
-function updateRegisterDisplays() { 
+function updateRegisterDisplays() {
   /**
    * Updates all register displays with current values in the selected base format.
-   * 
+   *
    * This function iterates through all register displays and formats the current
    * register values according to the globally selected base (registerBase). Each
    * value is displayed with the appropriate prefix:
@@ -292,11 +332,11 @@ function updateRegisterDisplays() {
    * - Octal: 0o prefix (e.g., 0o7654)
    * - Hexadecimal: 0x prefix (e.g., 0xABCD)
    * - Decimal: no prefix, shown as signed value (e.g., -42)
-   * 
+   *
    * @returns void - Modifies the DOM elements directly to display formatted register values
    */
   registerDisplays.forEach((registerDisplay, i) => {
-    if (registerBase == Base.BINARY) { 
+    if (registerBase == Base.BINARY) {
       registerDisplay.textContent = `0b${registers.get(i)!}`;
     } else if (registerBase == Base.OCTAL) {
       registerDisplay.textContent = `0o${binaryToOctal(registers.get(i)!)}`;
@@ -308,10 +348,14 @@ function updateRegisterDisplays() {
   });
 }
 
-function setRegister(rd: string, val: string, extendFunc: Function = signExtend): void {
+function setRegister(
+  rd: string,
+  val: string,
+  extendFunc: Function = signExtend,
+): void {
   /**
    * Sets a value to a specific register in the RISC-V register file.
-   * 
+   *
    * If the target register is x0, the value will always be set to 0 as per RISC-V spec.
    * For all other registers, the provided value will be set to the specified register.
    *
@@ -323,36 +367,35 @@ function setRegister(rd: string, val: string, extendFunc: Function = signExtend)
 
   // Convert register name to register number
   const register: number = STRINGS_TO_REGISTERS.get(rd)!;
-  let valCleaned: string = extendFunc((register == 0) ? "0" : val);
+  let valCleaned: string = extendFunc(register == 0 ? "0" : val);
 
   // register values are always stored as binary strings
   registers.set(register, valCleaned);
   updateRegisterDisplays();
 }
 
-function zeroAllRegisters() { 
+function zeroAllRegisters() {
   /**
    * Resets all registers to zero.
-   * 
+   *
    * This function iterates through all registers in the RISC-V register file,
    * including the program counter (PC), and sets their values to zero.
    * It's used to initialize or reset the register state before program execution.
    * After resetting the registers, it updates the register displays.
    */
-  for (let i: number = 0; i < XLEN + 1; i++) { 
+  for (let i: number = 0; i < XLEN + 1; i++) {
     registers.set(i, zeroExtend("0"));
   }
   updateRegisterDisplays();
 }
 
-
-function zeroExtend(bits: string, len: number = XLEN): string { 
+function zeroExtend(bits: string, len: number = XLEN): string {
   /**
    * Extends a binary string to the specified length by padding with zeros on the left.
-   * 
-   * This function is used for unsigned values where the most significant bits should 
+   *
+   * This function is used for unsigned values where the most significant bits should
    * be filled with zeros. If no length is specified, the function extends to XLEN bits.
-   * 
+   *
    * @param bits - The binary string to extend
    * @param len - The target length after extension (defaults to XLEN)
    * @returns A binary string padded with leading zeros to reach the specified length
@@ -360,22 +403,25 @@ function zeroExtend(bits: string, len: number = XLEN): string {
   return bits.padStart(len, "0");
 }
 
-function signExtend(bits: string, len: number = XLEN): string { 
+function signExtend(bits: string, len: number = XLEN): string {
   /**
    * Extends a binary string to the specified length by padding with the sign bit on the left.
-   * 
+   *
    * This function is used for signed values to preserve the sign when extending the bit width.
    * It copies the leftmost bit (sign bit) as padding. If no length is specified, the function
    * extends to XLEN bits.
-   * 
+   *
    * @param bits - The binary string to extend (first bit is the sign bit)
    * @param len - The target length after extension (defaults to XLEN)
    * @returns A binary string sign-extended to the specified length
    */
-  return bits.padStart(len, bits.charAt(0))
+  return bits.padStart(len, bits.charAt(0));
 }
 
-function decimalToTwosComplement(val: number, numDigits: number = XLEN): string {
+function decimalToTwosComplement(
+  val: number,
+  numDigits: number = XLEN,
+): string {
   /**
    * Converts a decimal number to its two's complement binary representation.
    *
@@ -423,21 +469,24 @@ function decimalToTwosComplement(val: number, numDigits: number = XLEN): string 
 function twosComplementToDecimal(bits: string): number {
   /**
    * Converts a binary string in two's complement format to its decimal representation.
-   * 
+   *
    * This function handles both positive and negative numbers:
    * - For positive numbers (MSB = 0), it directly converts from binary to decimal
    * - For negative numbers (MSB = 1), it follows the two's complement conversion:
    *   1. Inverting all bits
    *   2. Adding 1 to the inverted value
    *   3. Interpreting the result as a negative decimal value
-   * 
+   *
    * @param bits - The binary string in two's complement format to convert
    * @returns The decimal representation of the two's complement binary input
    */
   // Check if the number is negative (most significant bit is 1)
   if (bits[0] === "1") {
     // Convert to decimal using two's complement
-    let invertedBits: string = bits.split("").map((bit) => (bit === "0" ? "1" : "0")).join(""); // flip all the bits
+    let invertedBits: string = bits
+      .split("")
+      .map((bit) => (bit === "0" ? "1" : "0"))
+      .join(""); // flip all the bits
     const result: number = parseInt(invertedBits, 2) + 1; // parse as an integer
     return -result;
   } else {
@@ -446,13 +495,17 @@ function twosComplementToDecimal(bits: string): number {
   }
 }
 
-function binaryAdd(op1: string, op2: string, extendFunc: Function = signExtend): string {
+function binaryAdd(
+  op1: string,
+  op2: string,
+  extendFunc: Function = signExtend,
+): string {
   /**
    * Performs a binary addition of two binary strings.
    *
    * This function simulates the process of adding two binary numbers together
    * the same way it would be done by hand, processing each bit position from
-   * right to left and tracking the carry. The operands are extended to the same 
+   * right to left and tracking the carry. The operands are extended to the same
    * length using the provided extension function.
    *
    * @param op1 - First binary string operand
@@ -480,34 +533,43 @@ function binaryAdd(op1: string, op2: string, extendFunc: Function = signExtend):
     // If the sum of the two bits plus the carry is even, the result bit is 0
     // Otherwise, the result bit is 1
     let decSum: number = parseInt(num1) + parseInt(num2) + Number(carry);
-    sum = ((decSum % 2 == 0) ? "0" : "1") + sum;
+    sum = (decSum % 2 == 0 ? "0" : "1") + sum;
 
     // Calculate the carry for the next position
     // If the sum of the two bits plus the carry is 2 or greater, the carry is 1
     // Otherwise, the carry is 0
-    carry = (decSum >= 2) ? 1 : 0;
+    carry = decSum >= 2 ? 1 : 0;
   }
   return sum;
 }
 
-function binarySub(op1: string, op2: string, extendFunc: Function = signExtend) {
+function binarySub(
+  op1: string,
+  op2: string,
+  extendFunc: Function = signExtend,
+) {
+  console.log("Called sub");
   /** does op1 - op2 which is the same as op1 + (- op2) **/
   const len: number = Math.max(op1.length, op2.length);
   const cleanedOp1: string = extendFunc(op1, len);
   const cleanedOp2: string = extendFunc(op2, len);
+  console.log(`${cleanedOp1} ${cleanedOp2}`);
 
-  const op2Minus = binaryAdd(cleanedOp2, "1"); // first subtract 1 from the number
+  const op2Minus = binaryAdd(cleanedOp2, "1", signExtend); // first subtract 1 from the number
+  console.log(op2Minus);
   let negOp2: string = "";
-  for (let i = len - 1; i >= 0; i--) { // then flip all the bits
-    negOp2 = ((op2Minus.charAt(i) == "0") ? "1" : "0") + negOp2;
+  for (let i = len - 1; i >= 0; i--) {
+    // then flip all the bits
+    negOp2 = (op2Minus.charAt(i) == "0" ? "1" : "0") + negOp2;
   }
+  console.log(negOp2);
   return binaryAdd(op1, negOp2);
 }
 
-function addi(rd: string, rs1: string, imm: number): string {
+function addi(rd: string, rs: string, imm: number): string {
   /**
    * Implements the ADDI instruction (Add Immediate).
-   * 
+   *
    * Adds a 12-bit signed immediate value to the value in the source register,
    * and stores the result in the destination register.
    * If the immediate value exceeds the 12-bit signed range (-2048 to 2047),
@@ -519,22 +581,28 @@ function addi(rd: string, rs1: string, imm: number): string {
    * @returns true if the operation was successful, false otherwise
    * @throws Error via raiseError function if immediate value is out of range
    */
-  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
 
-  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  const sourceRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
+    5,
+  );
   machineCode = machineCode + sourceRegisterBin;
 
   machineCode = machineCode + "000";
 
-  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  const destRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    5,
+  );
   machineCode = machineCode + destRegisterBin;
 
   const opcode: string = zeroExtend("0", 7); // todo: figure out opcodes
   machineCode = machineCode + opcode;
 
-  const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  const binarySum: string = binaryAdd(sourceValue, decimalToTwosComplement(imm, XLEN));
+  const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs)!)!;
+  const binarySum: string = binaryAdd(sourceValue, immBin);
   setRegister(rd, binarySum);
 
   return machineCode;
@@ -555,22 +623,28 @@ function slti(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value to compare against
    * @returns true if the operation was successful, false if trying to modify register x0
    */
-  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
 
-  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  const sourceRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    5,
+  );
   machineCode = machineCode + sourceRegisterBin;
 
   machineCode = machineCode + "001";
 
-  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  const destRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    5,
+  );
   machineCode = machineCode + destRegisterBin;
 
   const opcode: string = zeroExtend("0", 7); // todo: figure out opcodes
   machineCode = machineCode + opcode;
 
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  setRegister(rd, (twosComplementToDecimal(sourceValue) < imm) ? "1" : "0");
+  setRegister(rd, twosComplementToDecimal(sourceValue) < twosComplementToDecimal(immBin) ? "1" : "0");
 
   return machineCode;
 }
@@ -586,15 +660,21 @@ function sltiu(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value to compare against
    * @returns true if the operation was successful, false if trying to modify register x0
    */
-  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
 
-  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  const sourceRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    5,
+  );
   machineCode = machineCode + sourceRegisterBin;
 
   machineCode = machineCode + "010";
 
-  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  const destRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    5,
+  );
   machineCode = machineCode + destRegisterBin;
 
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
@@ -602,8 +682,10 @@ function sltiu(rd: string, rs1: string, imm: number): string {
 
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   // first sign extend imm to XLEN bits, then treat as unsigned number
-  const immUnsigned: number = parseInt(zeroExtend(decimalToTwosComplement(imm, 12)));
-  setRegister(rd, (twosComplementToDecimal(sourceValue) < immUnsigned) ? "1" : "0");
+  setRegister(
+    rd,
+    twosComplementToDecimal(sourceValue) < parseInt(zeroExtend(immBin)) ? "1" : "0",
+  );
 
   return machineCode;
 }
@@ -623,25 +705,33 @@ function andi(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value for the AND operation
    * @returns true if the operation was successful, false if trying to modify register x0
    */
-  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
 
-  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  const sourceRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    5,
+  );
   machineCode = machineCode + sourceRegisterBin;
 
   machineCode = machineCode + "011";
 
-  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  const destRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    5,
+  );
   machineCode = machineCode + destRegisterBin;
 
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
-  const sourceBin: string[] = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!.split("");
-  const immBinArr: string[] = immBin.split("");
+  const sourceBin: string[] = registers
+    .get(STRINGS_TO_REGISTERS.get(rs1)!)!
+    .split("");
+  const immBinArr: string[] = signExtend(immBin).split("");
   const result: string[] = [];
   for (let i: number = 0; i < XLEN; i++) {
-    result[i] = (immBinArr[i] === "1") && (sourceBin[i] === "1") ? "1" : "0";
+    result[i] = ((immBinArr[i] === "1") && (sourceBin[i])) === "1" ? "1" : "0";
   }
   setRegister(rd, result.join(""));
   return machineCode;
@@ -658,25 +748,33 @@ function ori(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value for the OR operation
    * @returns true if the operation was successful, false if trying to modify register x0
    */
-  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
 
-  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  const sourceRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    5,
+  );
   machineCode = machineCode + sourceRegisterBin;
 
   machineCode = machineCode + "100";
 
-  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  const destRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    5,
+  );
   machineCode = machineCode + destRegisterBin;
 
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
-  const sourceBin: string[] = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!.split("");
-  const immBinArr: string[] = decimalToTwosComplement(imm, XLEN).split("");
+  const sourceBin: string[] = registers
+    .get(STRINGS_TO_REGISTERS.get(rs1)!)!
+    .split("");
+  const immBinArr: string[] = signExtend(immBin).split("");
   const result: string[] = [];
-  for (let i: number = 0; i < XLEN; i++) { 
-    result[i] = (immBinArr[i] === "1") || (sourceBin[i] === "1") ? "1" : "0";
+  for (let i: number = 0; i < XLEN; i++) {
+    result[i] = immBinArr[i] === "1" || sourceBin[i] === "1" ? "1" : "0";
   }
   setRegister(rd, result.join(""));
   return machineCode;
@@ -693,24 +791,32 @@ function xori(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value for the XOR operation
    * @returns true if the operation was successful, false if trying to modify register x0
    */
-  const immBin: string = decimalToTwosComplement(imm).slice(-12);
+  const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
 
-  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  const sourceRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    5,
+  );
   machineCode = machineCode + sourceRegisterBin;
 
   machineCode = machineCode + "101";
 
-  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  const destRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    5,
+  );
   machineCode = machineCode + destRegisterBin;
 
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
-  const sourceBin: string[] = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!.split("");
+  const sourceBin: string[] = registers
+    .get(STRINGS_TO_REGISTERS.get(rs1)!)!
+    .split("");
   const immBinArr: string[] = decimalToTwosComplement(imm, XLEN).split("");
   const result: string[] = [];
-  for (let i: number = 0; i < XLEN; i++) { 
+  for (let i: number = 0; i < XLEN; i++) {
     result[i] = !(immBinArr[i] === sourceBin[i]) ? "1" : "0";
   }
   setRegister(rd, result.join(""));
@@ -721,12 +827,18 @@ function slli(rd: string, rs1: string, imm: number): string {
   const immBin: string = imm.toString(2).slice(-5);
   let machineCode: string = zeroExtend(immBin, 12);
 
-  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  const sourceRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    5,
+  );
   machineCode = machineCode + sourceRegisterBin;
 
   machineCode = machineCode + "000";
 
-  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  const destRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    5,
+  );
   machineCode = machineCode + destRegisterBin;
 
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
@@ -738,18 +850,25 @@ function slli(rd: string, rs1: string, imm: number): string {
 
   setRegister(rd, result);
 
-  return machineCode; 
+  return machineCode;
 }
+
 function srli(rd: string, rs1: string, imm: number): string {
   const immBin: string = imm.toString(2).slice(-5);
   let machineCode: string = zeroExtend(immBin, 12);
 
-  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  const sourceRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    5,
+  );
   machineCode = machineCode + sourceRegisterBin;
 
   machineCode = machineCode + "010";
 
-  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  const destRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    5,
+  );
   machineCode = machineCode + destRegisterBin;
 
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
@@ -757,23 +876,32 @@ function srli(rd: string, rs1: string, imm: number): string {
 
   const immVal: number = parseInt(immBin);
   const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  const result: string = (zeroExtend("0", immVal) + sourceBin).substring(0, XLEN);
+  const result: string = (zeroExtend("0", immVal) + sourceBin).substring(
+    0,
+    XLEN,
+  );
 
   setRegister(rd, result);
 
-  return machineCode; 
+  return machineCode;
 }
 
 function srai(rd: string, rs1: string, imm: number): string {
   const immBin: string = imm.toString(2).slice(-5);
   let machineCode: string = "01" + zeroExtend(immBin, 10);
 
-  const sourceRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rs1)!).toString(2), 5);
+  const sourceRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    5,
+  );
   machineCode = machineCode + sourceRegisterBin;
 
   machineCode = machineCode + "011";
 
-  const destRegisterBin: string = zeroExtend((STRINGS_TO_REGISTERS.get(rd)!).toString(2), 5);
+  const destRegisterBin: string = zeroExtend(
+    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    5,
+  );
   machineCode = machineCode + destRegisterBin;
 
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
@@ -781,32 +909,25 @@ function srai(rd: string, rs1: string, imm: number): string {
 
   const immVal: number = parseInt(immBin);
   const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  const result: string = (zeroExtend("0", immVal) + sourceBin).substring(0, XLEN);
+  const result: string = (zeroExtend("0", immVal) + sourceBin).substring(
+    0,
+    XLEN,
+  );
 
   setRegister(rd, result);
 
-  return machineCode; 
+  return machineCode;
 }
 
 function lui(rd: string, imm: number): string {
-  const bits: string[] = decimalToTwosComplement(imm).split("");
-  for (let i = 0; i < XLEN; i++) {
-    if ((XLEN - i) <= 12) {
-      bits[i] = "0";
-    }
-  }
-  setRegister(rd, bits.join(""));
+  const upperBits: string = decimalToTwosComplement(imm).slice(0, 20);
+  setRegister(rd, upperBits + zeroExtend("0", 12));
   return "";
 }
 
-function auipc(rd: string, imm: number, lineNumber: number): string{
-  const bits: string[] = decimalToTwosComplement(imm).split("");
-  for (let i = 0; i < XLEN; i++) {
-    if ((XLEN - i) <= 12) {
-      bits[i] = "0";
-    }
-  }
-  const result: string = binaryAdd(bits.join(""), decimalToTwosComplement(imm));
+function auipc(rd: string, imm: number, lineNumber: number): string {
+  const immBin: string = decimalToTwosComplement(imm).slice(0, 20) + zeroExtend("0", 12);
+  const result: string = binaryAdd(immBin, registers.get(STRINGS_TO_REGISTERS.get("pc")!)!);
   setRegister(rd, result);
   return "";
 }
@@ -830,13 +951,20 @@ function sub(rd: string, rs1: string, rs2: string): string {
 function slt(rd: string, rs1: string, rs2: string): string {
   const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
-  setRegister(rd, zeroExtend(String(twosComplementToDecimal(rs1Value) < twosComplementToDecimal(rs2Value))));
+  setRegister(
+    rd,
+    zeroExtend(
+      String(
+        twosComplementToDecimal(rs1Value) < twosComplementToDecimal(rs2Value),
+      ),
+    ),
+  );
   return "";
 }
 function sltu(rd: string, rs1: string, rs2: string): string {
   const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
   const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
-  setRegister(rd, zeroExtend(String(parseInt(rs1Value) < parseInt(rs1Value))));
+  setRegister(rd, String(parseInt(rs1Value) < parseInt(rs1Value)));
   return "";
 }
 
@@ -849,5 +977,3 @@ function srl(rd: string, rs1: string, rs2: string): string {
   console.log("Called the srl function.");
   return "";
 }
-
-

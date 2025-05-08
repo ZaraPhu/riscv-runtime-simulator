@@ -249,9 +249,10 @@ assembleButton?.addEventListener("click", () => {
     const instructionList = parsingResult.output;
     let status: boolean = true;
     for (let i: number = 0; i < instructionList.length; i++) {
+      console.log(`instruction ${i + 1} of ${instructionList.length}`);
       status = executeInstruction(instructionList[i]);
       if (!status) {
-        break;
+        //break;
       } else { 
         addi("pc", "pc", 1);
       }
