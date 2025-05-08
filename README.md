@@ -1,6 +1,6 @@
 # riscv-runtime-simulator
 ## Purpose
-This is the source code reposity for my (Zara's) implementation of a RISC-V Runtime Simulator. The source code is stored here for anybody to be able to modify and use, available under the GPLv3
+This is the source code reposity for my (Zara's) implementation of a RISC-V Runtime Simulator. The source code is stored here for anybody to be able to modify and use, available under the GPLv3 license.
 
 ## Guide for Beginners
 ### Overview
@@ -42,6 +42,9 @@ Legend:
 - rd - destination register
 - rs/rs1/rs2: source register(s)
 - imm - immediate value (a number)
+
+### The Memory Peeker
+Currently, the Memory Peeker has not been implemented. When it is ready, this component will display the binary (machine code) representation of the instructions. 
 
 ## An Example Program
 Consider the following program
