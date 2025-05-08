@@ -48,12 +48,12 @@ Consider the following program
 ```
 ADDI x1, x0, 5
 ADDI x2, x0, 3
-SUB x3, x2, x1
+SUB x3, x1, x2
 ```
 Here is what this program does line by line:
-1. Move the value of 5 into register x1
+1. Move the value of 5 (same as 5 + 0, since x0 is always 0) into register x1
 2. Move the value of 3 into register x2
-3. Store the result of 5 - 3 in register x3
+3. Store the result of 5 - 3 (x1 - x2) in register x3
 
 ## Appendix A: The RISC-V ISA
 This runtime simulator will be trying to match the latest ratfound at ratified technical specifications for the RISC-V ISA (https://lf-riscv.atlassian.net/wiki/spaces/HOME/pages/16154769/RISC-V+Technical+Specifications). I will begin by pouring through the
