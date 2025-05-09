@@ -59,4 +59,4 @@ Here is what this program does line by line:
 3. Store the result of 5 - 3 (x1 - x2) in register x3
 
 ## Appendix A: The RISC-V ISA
-This runtime simulator will be trying to match the latest ratfound at ratified technical specifications for the RISC-V ISA (https://lf-riscv.atlassian.net/wiki/spaces/HOME/pages/16154769/RISC-V+Technical+Specifications). I will begin by pouring through the
+This runtime simulator will be trying to match the latest ratfound at ratified technical specifications for the [RISC-V ISA](https://lf-riscv.atlassian.net/wiki/spaces/HOME/pages/16154769/RISC-V+Technical+Specifications). I will begin by pouring through the
