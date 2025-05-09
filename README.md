@@ -4,7 +4,7 @@ This is the source code reposity for my (Zara's) implementation of a RISC-V Runt
 
 ## Guide for Beginners
 ### Overview
-This RISC-V "Runtime Simulator" is a web app currently deployed at (zarafoo.com)[https://www.zarafoo.com]. RISC-V (pronounced "risk-five") refers to a set of instructions for CPUs, and this instruction set defines how the CPU carries out operations to make a computer run. "RISC" stands for "Reduced Instruction Set Computing", and it's considered "Reduced" because it defines a very simple set of instructions that can be carried out by the CPU compared to instruction sets like x86.
+This RISC-V "Runtime Simulator" is a web app currently deployed at [zarafoo.com](https://www.zarafoo.com). RISC-V (pronounced "risk-five") refers to a set of instructions for CPUs, and this instruction set defines how the CPU carries out operations to make a computer run. "RISC" stands for "Reduced Instruction Set Computing", and it's considered "Reduced" because it defines a very simple set of instructions that can be carried out by the CPU compared to instruction sets like x86.
 
 The special quality of RISC-V is that it is an open standard, meaning that there are no royalties to pay or proprietary licenses to obtain in order to use it.
 
