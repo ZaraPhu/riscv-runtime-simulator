@@ -82,6 +82,13 @@ const PSEUDO_TYPE: OperandType[] = [
 ];
 const J_TYPE: OperandType[] = []; // Jump instructions
 
+interface InstructionInput {
+  rd: string;
+  rs1: string;
+  rs2: string;
+  imm: number;
+}
+
 /**
  * Register System
  */
@@ -211,8 +218,7 @@ const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   ["JALR", J_TYPE], // Jump and link register
 ]);
 
-// I_INSTRUCTION_TO_FUNCTION is a map of all the I-type instructions to their corresponding functions
-const I_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
+const INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["ADDI", addi],
   ["SLTI", slti],
   ["SLTIU", sltiu],
@@ -222,30 +228,15 @@ const I_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["SLLI", slli],
   ["SRLI", srli],
   ["SRAI", srai],
-]);
-
-// U_INSTRUCTION_TO_FUNCTION is a map of all the U-type instructions to their corresponding functions
-const U_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["LUI", lui],
   ["AUIPC", auipc],
-]);
-
-// R_INSTRUCTION_TO_FUNCTION is a map of all the R-type instructions to their corresponding functions
-const R_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["ADD", add],
   ["SUB", sub],
   ["SLT", slt],
   ["SLTU", sltu],
   ["SLL", sll],
   ["SRL", srl],
-]);
-
-// NONE_INSTRUCTION_TO_FUNCTION is a map of all the none-type instructions to their corresponding functions
-const NONE_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
-  ["NOP", () => {}],
-]);
-
-const PSEUDO_INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
+  ["NOP", (inputParams: InstructionInput) => { return ""; }],
   ["MV", mv],
   ["SEQZ", seqz],
 ]);
@@ -528,7 +519,7 @@ function binarySub(
   return binaryAdd(op1, negOp2);
 }
 
-function addi(rd: string, rs: string, imm: number): string {
+function addi(inputParams: InstructionInput): string {
   /**
    * Implements the ADDI instruction (Add Immediate).
    *
@@ -541,37 +532,38 @@ function addi(rd: string, rs: string, imm: number): string {
    * @param imm - The immediate value to add
    * @returns The machine code representation of the instruction as a binary string
    */
+  const rd: string = inputParams.rd;
+  const rs: string = inputParams.rs1;
+  const imm: number = inputParams.imm;
+
+  // create machine code representation
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
-
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
+    STRINGS_TO_REGISTERS.get(String(rs))!.toString(2),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-
   machineCode = machineCode + "000";
-
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(rd)!.toString(2),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-
   const opcode: string = zeroExtend("0", 7); // todo: figure out opcodes
   machineCode = machineCode + opcode;
 
+  // carry out operations for instruction
   const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs)!)!;
   const binarySum: string = binaryAdd(sourceValue, immBin);
   setRegister(rd, binarySum);
-
-  return machineCode;
+  return machineCode; // return machine code representation
 }
 
-function mv(rd: string, rs: string): string {
+function mv(inputParams: InstructionInput): string {
   /**
    * Implements the MV (Move) pseudo-instruction.
-   * 
+   *
    * Copies the value from the source register to the destination register.
    * This is implemented using the ADDI instruction with an immediate value of 0,
    * which effectively adds 0 to the source register and stores the result in
@@ -581,13 +573,14 @@ function mv(rd: string, rs: string): string {
    * @param rs - The source register name containing the value to be copied
    * @returns The machine code representation of the instruction as a binary string
    */
-  return addi(rd, rs, 0);
+  inputParams.imm = 0;
+  return addi(inputParams);
 }
 
-function slti(rd: string, rs1: string, imm: number): string {
+function slti(inputParams: InstructionInput): string {
   /**
    * Implements the SLTI instruction (Set Less Than Immediate).
-   * 
+   *
    * Performs a signed comparison between the value in the source register
    * and the sign-extended immediate value. If the register value is less than
    * the immediate value, sets the destination register to 1, otherwise sets it to 0.
@@ -598,41 +591,40 @@ function slti(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value to compare against (sign-extended)
    * @returns The machine code representation of the instruction as a binary string
    */
+  const rd: string = inputParams.rd;
+  const rs: string = inputParams.rs1;
+  const imm: number = inputParams.imm;
+
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
-
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-
   machineCode = machineCode + "001";
-
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(rd)!.toString(2),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-
   const opcode: string = zeroExtend("0", 7); // todo: figure out opcodes
   machineCode = machineCode + opcode;
 
-  const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs)!)!;
   setRegister(
     rd,
     twosComplementToDecimal(sourceValue) < twosComplementToDecimal(immBin)
       ? "1"
       : "0",
   );
-
   return machineCode;
 }
 
-function sltiu(rd: string, rs1: string, imm: number): string {
+function sltiu(inputParams: InstructionInput): string {
   /**
    * Implements the SLTIU instruction (Set Less Than Immediate Unsigned).
-   * 
+   *
    * Performs an unsigned comparison between the value in the source register
    * and the sign-extended immediate value. If the register value is less than
    * the immediate value, sets the destination register to 1, otherwise sets it to 0.
@@ -643,27 +635,27 @@ function sltiu(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value to compare against (sign-extended)
    * @returns The machine code representation of the instruction as a binary string
    */
+  const rd: string = inputParams.rd;
+  const rs: string = inputParams.rs1;
+  const imm: number = inputParams.imm;
+
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
-
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-
   machineCode = machineCode + "010";
-
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(rd)!.toString(2),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
-  const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const sourceValue: string = registers.get(STRINGS_TO_REGISTERS.get(rs)!)!;
   // first sign extend imm to XLEN bits, then treat as unsigned number
   setRegister(
     rd,
@@ -671,14 +663,13 @@ function sltiu(rd: string, rs1: string, imm: number): string {
       ? "1"
       : "0",
   );
-
   return machineCode;
 }
 
-function seqz(rd: string, rs: string): string {
+function seqz(inputParams: InstructionInput): string {
   /**
    * Implements the SEQZ (Set if Equal to Zero) pseudo-instruction.
-   * 
+   *
    * Sets the destination register to 1 if the value in the source register
    * is equal to zero, otherwise sets it to 0. This is implemented using
    * the SLTIU instruction with an immediate value of 1, which effectively
@@ -688,13 +679,14 @@ function seqz(rd: string, rs: string): string {
    * @param rs - The source register name containing the value to check
    * @returns The machine code representation of the instruction as a binary string
    */
-  return sltiu(rd, rs, 1);
+  inputParams.imm = 1;
+  return sltiu(inputParams);
 }
 
-function andi(rd: string, rs1: string, imm: number): string {
+function andi(inputParams: InstructionInput): string {
   /**
    * Implements the ANDI instruction (AND Immediate).
-   * 
+   *
    * Performs a bitwise AND operation between the value in the source register
    * and the sign-extended immediate value, storing the result in the destination register.
    * The immediate value is sign-extended to XLEN bits before performing the AND operation.
@@ -704,28 +696,28 @@ function andi(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value for the AND operation (sign-extended)
    * @returns The machine code representation of the instruction as a binary string
    */
+  const rd: string = inputParams.rd;
+  const rs: string = inputParams.rs1;
+  const imm: number = inputParams.imm;
+
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
-
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-
   machineCode = machineCode + "011";
-
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(rd)!.toString(2),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
   const sourceBin: string[] = registers
-    .get(STRINGS_TO_REGISTERS.get(rs1)!)!
+    .get(STRINGS_TO_REGISTERS.get(rs)!)!
     .split("");
   const immBinArr: string[] = signExtend(immBin).split("");
   const result: string[] = [];
@@ -736,10 +728,10 @@ function andi(rd: string, rs1: string, imm: number): string {
   return machineCode;
 }
 
-function ori(rd: string, rs1: string, imm: number): string {
+function ori(inputParams: InstructionInput): string {
   /**
    * Implements the ORI instruction (OR Immediate).
-   * 
+   *
    * Performs a bitwise OR operation between the value in the source register
    * and the sign-extended immediate value, storing the result in the destination register.
    * The immediate value is sign-extended to XLEN bits before performing the OR operation.
@@ -749,28 +741,28 @@ function ori(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value for the OR operation (sign-extended)
    * @returns The machine code representation of the instruction as a binary string
    */
+  const rd: string = inputParams.rd;
+  const rs: string = inputParams.rs1;
+  const imm: number = inputParams.imm;
+
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
-
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-
   machineCode = machineCode + "100";
-
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(rd)!.toString(2),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
   const sourceBin: string[] = registers
-    .get(STRINGS_TO_REGISTERS.get(rs1)!)!
+    .get(STRINGS_TO_REGISTERS.get(rs)!)!
     .split("");
   const immBinArr: string[] = signExtend(immBin).split("");
   const result: string[] = [];
@@ -781,10 +773,10 @@ function ori(rd: string, rs1: string, imm: number): string {
   return machineCode;
 }
 
-function xori(rd: string, rs1: string, imm: number): string {
+function xori(inputParams: InstructionInput): string {
   /**
    * Implements the XORI instruction (XOR Immediate).
-   * 
+   *
    * Performs a bitwise XOR operation between the value in the source register
    * and the sign-extended immediate value, storing the result in the destination register.
    * The immediate value is sign-extended to XLEN bits before performing the XOR operation.
@@ -794,28 +786,28 @@ function xori(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value for the XOR operation (sign-extended)
    * @returns The machine code representation of the instruction as a binary string
    */
+  const rd: string = inputParams.rd;
+  const rs: string = inputParams.rs1;
+  const imm: number = inputParams.imm;
+
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
-
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-
   machineCode = machineCode + "101";
-
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(rd)!.toString(2),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
   const sourceBin: string[] = registers
-    .get(STRINGS_TO_REGISTERS.get(rs1)!)!
+    .get(STRINGS_TO_REGISTERS.get(rs)!)!
     .split("");
   const immBinArr: string[] = decimalToTwosComplement(imm, XLEN).split("");
   const result: string[] = [];
@@ -826,10 +818,10 @@ function xori(rd: string, rs1: string, imm: number): string {
   return machineCode;
 }
 
-function slli(rd: string, rs1: string, imm: number): string {
+function slli(inputParams: InstructionInput): string {
   /**
    * Implements the SLLI instruction (Shift Left Logical Immediate).
-   * 
+   *
    * Performs a logical left shift on the value in the source register by the
    * immediate value, and stores the result in the destination register.
    * The shift amount is encoded in the lower 5 bits of the immediate value.
@@ -840,39 +832,37 @@ function slli(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value specifying the shift amount (0-31)
    * @returns The machine code representation of the instruction as a binary string
    */
+  const rd: string = inputParams.rd;
+  const rs: string = inputParams.rs1;
+  const imm: number = inputParams.imm;
+
   const immBin: string = imm.toString(2).slice(-5);
   let machineCode: string = zeroExtend(immBin, 12);
-
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-
   machineCode = machineCode + "000";
-
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(rd)!.toString(2),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
   const immVal: number = parseInt(immBin);
-  const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs)!)!;
   const result: string = (sourceBin + zeroExtend("0", immVal)).slice(XLEN);
-
   setRegister(rd, result);
-
   return machineCode;
 }
 
-function srli(rd: string, rs1: string, imm: number): string {
+function srli(inputParams: InstructionInput): string {
   /**
    * Implements the SRLI instruction (Shift Right Logical Immediate).
-   * 
+   *
    * Performs a logical right shift on the value in the source register by the
    * immediate value, and stores the result in the destination register.
    * The shift amount is encoded in the lower 5 bits of the immediate value.
@@ -883,42 +873,40 @@ function srli(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value specifying the shift amount (0-31)
    * @returns The machine code representation of the instruction as a binary string
    */
+  const rd: string = inputParams.rd;
+  const rs: string = inputParams.rs1;
+  const imm: number = inputParams.imm;
+
   const immBin: string = imm.toString(2).slice(-5);
   let machineCode: string = zeroExtend(immBin, 12);
-
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-
   machineCode = machineCode + "010";
-
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(rd)!.toString(2),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
   const immVal: number = parseInt(immBin);
-  const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs)!)!;
   const result: string = (zeroExtend("0", immVal) + sourceBin).substring(
     0,
     XLEN,
   );
-
   setRegister(rd, result);
-
   return machineCode;
 }
 
-function srai(rd: string, rs1: string, imm: number): string {
+function srai(inputParams: InstructionInput): string {
   /**
    * Implements the SRAI instruction (Shift Right Arithmetic Immediate).
-   * 
+   *
    * Performs an arithmetic right shift on the value in the source register by the
    * immediate value, and stores the result in the destination register.
    * The shift amount is encoded in the lower 5 bits of the immediate value.
@@ -930,136 +918,151 @@ function srai(rd: string, rs1: string, imm: number): string {
    * @param imm - The immediate value specifying the shift amount (0-31)
    * @returns The machine code representation of the instruction as a binary string
    */
+  const rd: string = inputParams.rd;
+  const rs: string = inputParams.rs1;
+  const imm: number = inputParams.imm;
+
   const immBin: string = imm.toString(2).slice(-5);
   let machineCode: string = "01" + zeroExtend(immBin, 10);
-
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs1)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-
   machineCode = machineCode + "011";
-
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(rd)!.toString(2),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
   const immVal: number = parseInt(immBin);
-  const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
+  const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs)!)!;
   const result: string = (zeroExtend("0", immVal) + sourceBin).substring(
     0,
     XLEN,
   );
-
   setRegister(rd, result);
   return machineCode;
 }
 
-function lui(rd: string, imm: number): string {
+function lui(inputParams: InstructionInput): string {
   /**
    * Implements the LUI instruction (Load Upper Immediate).
-   * 
+   *
    * Loads the immediate value into the upper 20 bits of the destination register,
    * and sets the lower 12 bits to zero. This instruction is typically used to
    * build 32-bit constants when combined with an instruction that sets the lower bits.
-   * 
+   *
    * @param rd - The destination register name where the result will be stored
    * @param imm - The immediate value to load into the upper 20 bits (sign-extended)
    * @returns An empty string as the machine code representation is not implemented
    */
-  const upperBits: string = decimalToTwosComplement(imm).slice(0, 20);
-  setRegister(rd, upperBits + zeroExtend("0", 12));
+  const upperBits: string = decimalToTwosComplement(
+    Number(inputParams.imm),
+  ).slice(0, 20);
+  setRegister(inputParams.rd, upperBits + zeroExtend("0", 12));
   return "";
 }
 
-function auipc(rd: string, imm: number): string {
+function auipc(inputParams: InstructionInput): string {
   /**
    * Implements the AUIPC instruction (Add Upper Immediate to PC).
-   * 
-   * Adds the immediate value (shifted left by 12 bits) to the address of the 
-   * AUIPC instruction (stored in the PC register), and stores the result in 
-   * the destination register. This instruction is commonly used for PC-relative 
+   *
+   * Adds the immediate value (shifted left by 12 bits) to the address of the
+   * AUIPC instruction (stored in the PC register), and stores the result in
+   * the destination register. This instruction is commonly used for PC-relative
    * addressing, such as constructing addresses farther than 12 bits from the PC.
-   * 
+   *
    * The immediate value is sign-extended and placed in the upper 20 bits of a 32-bit
    * word, with the lower 12 bits filled with zeros. This value is then added to the PC
    * and the result is stored in the destination register.
-   * 
+   *
    * @param rd - The destination register name where the result will be stored
    * @param imm - The immediate value to be added to the PC (upper 20 bits)
    * @returns An empty string as the machine code representation is not implemented
    */
-  const upperBits: string = decimalToTwosComplement(imm).slice(0, 20);
+  const upperBits: string = decimalToTwosComplement(
+    Number(inputParams.imm),
+  ).slice(0, 20);
   const result: string = binaryAdd(
     upperBits + zeroExtend("0", 12),
     registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,
   );
-  setRegister(rd, result);
+  setRegister(inputParams.rd, result);
   return "";
 }
 
-function add(rd: string, rs1: string, rs2: string): string {
+function add(inputParams: InstructionInput): string {
   /**
    * Implements the ADD instruction (Add).
-   * 
+   *
    * Adds the values in two source registers and stores the result in the
    * destination register. The values are treated as two's complement integers.
-   * 
+   *
    * @param rd - The destination register name where the result will be stored
    * @param rs1 - The first source register name containing the first operand
    * @param rs2 - The second source register name containing the second operand
    * @returns An empty string as the machine code representation is not implemented
    */
-  const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
+  const rs1Value: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
+  )!;
+  const rs2Value: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
+  )!;
   const sumValue: string = binaryAdd(rs1Value, rs2Value);
-  setRegister(rd, signExtend(sumValue));
+  setRegister(inputParams.rd, signExtend(sumValue));
   return "";
 }
 
-function sub(rd: string, rs1: string, rs2: string): string {
+function sub(inputParams: InstructionInput): string {
   /**
    * Implements the SUB instruction (Subtract).
-   * 
+   *
    * Subtracts the value in the second source register from the value in the first
    * source register and stores the result in the destination register.
    * The values are treated as two's complement integers.
-   * 
+   *
    * @param rd - The destination register name where the result will be stored
    * @param rs1 - The first source register name containing the minuend
    * @param rs2 - The second source register name containing the subtrahend
    * @returns An empty string as the machine code representation is not implemented
    */
-  const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
+  const rs1Value: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
+  )!;
+  const rs2Value: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
+  )!;
   const subValue: string = binarySub(rs1Value, rs2Value);
-  setRegister(rd, signExtend(subValue));
+  setRegister(inputParams.rd, signExtend(subValue));
   return "";
 }
 
-function slt(rd: string, rs1: string, rs2: string): string {
+function slt(inputParams: InstructionInput): string {
   /**
    * Implements the SLT instruction (Set Less Than).
-   * 
+   *
    * Compares the values in two source registers as signed (two's complement) integers.
    * If the value in the first source register is less than the value in the second
    * source register, sets the destination register to 1, otherwise sets it to 0.
-   * 
+   *
    * @param rd - The destination register name where the result will be stored
    * @param rs1 - The first source register name containing the first value to compare
    * @param rs2 - The second source register name containing the second value to compare
    * @returns An empty string as the machine code representation is not implemented
    */
-  const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
+  const rs1Value: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
+  )!;
+  const rs2Value: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
+  )!;
   setRegister(
-    rd,
+    inputParams.rd,
     zeroExtend(
       String(
         twosComplementToDecimal(rs1Value) < twosComplementToDecimal(rs2Value),
@@ -1068,31 +1071,35 @@ function slt(rd: string, rs1: string, rs2: string): string {
   );
   return "";
 }
-function sltu(rd: string, rs1: string, rs2: string): string {
+function sltu(inputParams: InstructionInput): string {
   /**
    * Implements the SLTU instruction (Set Less Than Unsigned).
-   * 
+   *
    * Compares the values in two source registers as unsigned integers.
    * If the value in the first source register is less than the value in the second
    * source register, sets the destination register to 1, otherwise sets it to 0.
-   * 
+   *
    * @param rd - The destination register name where the result will be stored
    * @param rs1 - The first source register name containing the first value to compare
    * @param rs2 - The second source register name containing the second value to compare
    * @returns An empty string as the machine code representation is not implemented
    */
-  const rs1Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs1)!)!;
-  const rs2Value: string = registers.get(STRINGS_TO_REGISTERS.get(rs2)!)!;
-  setRegister(rd, String(parseInt(rs1Value) < parseInt(rs2Value)));
+  const rs1Value: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
+  )!;
+  const rs2Value: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
+  )!;
+  setRegister(inputParams.rd, String(parseInt(rs1Value) < parseInt(rs2Value)));
   return "";
 }
 
-function sll(rd: string, rs1: string, rs2: string): string {
+function sll(inputParams: InstructionInput): string {
   console.log("Called the sll function.");
   return "";
 }
 
-function srl(rd: string, rs1: string, rs2: string): string {
+function srl(inputParams: InstructionInput): string {
   console.log("Called the srl function.");
   return "";
 }

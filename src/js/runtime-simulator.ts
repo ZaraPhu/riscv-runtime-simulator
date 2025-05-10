@@ -18,19 +18,18 @@ const errorText = document.querySelector(
   "#error-text",
 ) as HTMLParagraphElement | null;
 const resetRegistersButton = document.querySelector(
-    "#reset-registers-btn"
+  "#reset-registers-btn",
 ) as HTMLButtonElement | null;
-
 
 /*** Functions ***/
 function raiseError(message: string = "") {
   /**
    * Displays an error message in the UI.
-   * 
+   *
    * This function updates the error text display element with the provided message.
    * If the error text element is not found in the DOM (null), the function will
    * silently fail without displaying the message.
-   * 
+   *
    * @param message - The error message to display
    */
   if (errorText != null) {
@@ -119,7 +118,7 @@ function parseInput(instructionList: string[]): ParserResult {
           parsingResult.status = ParserStatus.ERR;
           parsingResult.errMessage += `Line ${i + 1}: Operand "${operands[j]}" is not a number.\n`;
           continue;
-        } 
+        }
         const operand_j: number = parseInt(operands[j]);
       }
     }
@@ -156,62 +155,60 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
 
   // Initialize status
   let status: boolean = true;
-  
+  const instructionFunc: Function = INSTRUCTION_TO_FUNCTION.get(
+    destructuredInstruction[0],
+  )!;
+
   // Execute the appropriate function based on instruction type
   switch (instructionType) {
     // I-type instructions (e.g., addi, lw) - typically use immediate values
     case I_TYPE:
-      const iTypeCallable = I_INSTRUCTION_TO_FUNCTION.get(
-        destructuredInstruction[0],
-      )!;
-      status = iTypeCallable(
-        destructuredInstruction[1], // Destination register
-        destructuredInstruction[2], // Source register
-        destructuredInstruction[3], // Immediate value
-      );
+      const iTypeInputs: InstructionInput = {
+        rd: destructuredInstruction[1],
+        rs1: destructuredInstruction[2],
+        rs2: "",
+        imm: Number(destructuredInstruction[3]),
+      };
+      status = instructionFunc(iTypeInputs);
       break;
 
     // R-type instructions (e.g., add, sub) - register-register operations
     case R_TYPE:
-      const rTypeCallable = R_INSTRUCTION_TO_FUNCTION.get(
-        destructuredInstruction[0],
-      )!;
-      status = rTypeCallable(
-        destructuredInstruction[1], // Destination register
-        destructuredInstruction[2], // Source register 1
-        destructuredInstruction[3], // Source register 2
-      );
+      const rTypeInputs: InstructionInput = {
+        rd: destructuredInstruction[1],
+        rs1: destructuredInstruction[2],
+        rs2: destructuredInstruction[3],
+        imm: 0,
+      };
+      status = instructionFunc(rTypeInputs);
       break;
 
     // U-type instructions (e.g., lui) - upper immediate operations
     case U_TYPE:
-      let uTypeCallable = U_INSTRUCTION_TO_FUNCTION.get(
-        destructuredInstruction[0],
-      )!;
-      status = uTypeCallable(
-        destructuredInstruction[1], // Destination register
-        destructuredInstruction[2], // Immediate value
-      );
+      console.log("U type");
+      const uTypeInputs: InstructionInput = {
+        rd: destructuredInstruction[1],
+        rs1: "",
+        rs2: "",
+        imm: Number(destructuredInstruction[2]),
+      };
+      status = instructionFunc(uTypeInputs);
       break;
 
     // Instructions with no operands
     case NONE_TYPE:
-      let noneTypeCallable = NONE_INSTRUCTION_TO_FUNCTION.get(
-        destructuredInstruction[0],
-      )!;
-      status = noneTypeCallable();
+      status = instructionFunc();
       break;
 
     case PSEUDO_TYPE:
-      let pseudoTypeCallable = PSEUDO_INSTRUCTION_TO_FUNCTION.get(
-        destructuredInstruction[0],
-      )!;
-      status = pseudoTypeCallable(
-        destructuredInstruction[1],
-        destructuredInstruction[2]
-      );
+      const pTypeInputs: InstructionInput = {
+        rd: destructuredInstruction[1],
+        rs1: destructuredInstruction[2],
+        rs2: "",
+        imm: Number(destructuredInstruction[3]),
+      };
+      status = instructionFunc(pTypeInputs);
       break;
-
     // Handle unexpected instruction types
     default:
       console.log("Got an invalid instruction type.");
@@ -225,14 +222,25 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
 updateRegisterDisplays();
 
 // adding event listeners which can change the representation
-binaryCheck.addEventListener("click", () => { setRegisterBase(Base.BINARY); updateRegisterDisplays(); });
-octalCheck.addEventListener("click", () => { setRegisterBase(Base.OCTAL); updateRegisterDisplays(); });
-decimalCheck.addEventListener("click", () => { setRegisterBase(Base.DECIMAL); updateRegisterDisplays(); });
-hexadecimalCheck.addEventListener("click", () => { setRegisterBase(Base.HEXADECIMAL); updateRegisterDisplays(); });
+binaryCheck.addEventListener("click", () => {
+  setRegisterBase(Base.BINARY);
+  updateRegisterDisplays();
+});
+octalCheck.addEventListener("click", () => {
+  setRegisterBase(Base.OCTAL);
+  updateRegisterDisplays();
+});
+decimalCheck.addEventListener("click", () => {
+  setRegisterBase(Base.DECIMAL);
+  updateRegisterDisplays();
+});
+hexadecimalCheck.addEventListener("click", () => {
+  setRegisterBase(Base.HEXADECIMAL);
+  updateRegisterDisplays();
+});
 
 // Add click event listener to the assemble button
 assembleButton?.addEventListener("click", () => {
-  
   // Split the assembly editor's content into an array of instructions
   const instructionsList: string[] = assemblyEditor?.value.split("\n") || [];
 
@@ -243,18 +251,22 @@ assembleButton?.addEventListener("click", () => {
   // If the assembly is invalid, log which line caused the error
   if (parsingResult.status == ParserStatus.ERR) {
     raiseError(parsingResult.errMessage);
-  } else { 
+  } else {
     clearError();
     setRegister("pc", "0");
     const instructionList = parsingResult.output;
     let status: boolean = true;
     for (let i: number = 0; i < instructionList.length; i++) {
-      console.log(`instruction ${i + 1} of ${instructionList.length}`);
       status = executeInstruction(instructionList[i]);
       if (!status) {
         //break;
-      } else { 
-        addi("pc", "pc", 1);
+      } else {
+        addi({
+          rd: "pc",
+          rs1: "pc",
+          rs2: "",
+          imm: 1,
+        });
       }
     }
   }
