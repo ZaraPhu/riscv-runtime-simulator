@@ -425,11 +425,11 @@ function decimalToTwosComplement(
    * @assumption -2^(numDigits-1) <= val < 2^(numDigits-1)
    */
   if (val >= 0) {
-    return zeroExtend(val.toString(2));
+    return zeroExtend(val.toString(Base.BINARY));
   }
 
   const absVal: number = Math.abs(val);
-  const bits: string = zeroExtend(absVal.toString(2));
+  const bits: string = zeroExtend(absVal.toString(Base.BINARY));
 
   let chars: string[] = [...bits];
   chars = chars.map((char) => (char === "0" ? "1" : "0"));
@@ -456,10 +456,10 @@ function twosComplementToDecimal(bits: string): number {
       .split("")
       .map((bit) => (bit === "0" ? "1" : "0"))
       .join(""); // flip all the bits
-    const result: number = parseInt(invertedBits, 2) + 1; // parse as an integer
+    const result: number = parseInt(invertedBits, Base.BINARY) + 1; // parse as an integer
     return -result;
   } else {
-    return parseInt(bits, 2);
+    return parseInt(bits, Base.BINARY);
   }
 }
 
@@ -489,7 +489,6 @@ function binaryAdd(
 
     let decSum: number = parseInt(num1) + parseInt(num2) + Number(carry);
     sum = (decSum % 2 == 0 ? "0" : "1") + sum;
-
     carry = decSum >= 2 ? 1 : 0;
   }
   return sum;
@@ -540,13 +539,13 @@ function addi(inputParams: InstructionInput): string {
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(String(rs))!.toString(2),
+    STRINGS_TO_REGISTERS.get(String(rs))!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
   machineCode = machineCode + "000";
   const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
@@ -598,13 +597,13 @@ function slti(inputParams: InstructionInput): string {
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
   machineCode = machineCode + "001";
   const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
@@ -642,13 +641,13 @@ function sltiu(inputParams: InstructionInput): string {
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
   machineCode = machineCode + "010";
   const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
@@ -659,7 +658,7 @@ function sltiu(inputParams: InstructionInput): string {
   // first sign extend imm to XLEN bits, then treat as unsigned number
   setRegister(
     rd,
-    twosComplementToDecimal(sourceValue) < parseInt(zeroExtend(immBin))
+    twosComplementToDecimal(sourceValue) < parseInt(zeroExtend(immBin), Base.BINARY)
       ? "1"
       : "0",
   );
@@ -703,13 +702,13 @@ function andi(inputParams: InstructionInput): string {
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
   machineCode = machineCode + "011";
   const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
@@ -748,13 +747,13 @@ function ori(inputParams: InstructionInput): string {
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
   machineCode = machineCode + "100";
   const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
@@ -793,13 +792,13 @@ function xori(inputParams: InstructionInput): string {
   const immBin: string = decimalToTwosComplement(Number(imm)).slice(-12);
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
   machineCode = machineCode + "101";
   const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
@@ -836,16 +835,16 @@ function slli(inputParams: InstructionInput): string {
   const rs: string = inputParams.rs1;
   const imm: number = inputParams.imm;
 
-  const immBin: string = imm.toString(2).slice(-5);
+  const immBin: string = imm.toString(Base.BINARY).slice(-5);
   let machineCode: string = zeroExtend(immBin, 12);
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
   machineCode = machineCode + "000";
   const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
@@ -877,16 +876,16 @@ function srli(inputParams: InstructionInput): string {
   const rs: string = inputParams.rs1;
   const imm: number = inputParams.imm;
 
-  const immBin: string = imm.toString(2).slice(-5);
+  const immBin: string = imm.toString(Base.BINARY).slice(-5);
   let machineCode: string = zeroExtend(immBin, 12);
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
   machineCode = machineCode + "010";
   const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
@@ -922,23 +921,23 @@ function srai(inputParams: InstructionInput): string {
   const rs: string = inputParams.rs1;
   const imm: number = inputParams.imm;
 
-  const immBin: string = imm.toString(2).slice(-5);
+  const immBin: string = imm.toString(Base.BINARY).slice(-5);
   let machineCode: string = "01" + zeroExtend(immBin, 10);
   const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rs)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rs)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
   machineCode = machineCode + "011";
   const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(rd)!.toString(2),
+    STRINGS_TO_REGISTERS.get(rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
   const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
   machineCode = machineCode + opcode;
 
-  const immVal: number = parseInt(immBin);
+  const immVal: number = parseInt(immBin, Base.BINARY);
   const sourceBin: string = registers.get(STRINGS_TO_REGISTERS.get(rs)!)!;
   const result: string = (zeroExtend("0", immVal) + sourceBin).substring(
     0,
@@ -1100,7 +1099,7 @@ function sltu(inputParams: InstructionInput): string {
   const rs2Value: string = registers.get(
     STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
   )!;
-  setRegister(inputParams.rd, String(parseInt(rs1Value) < parseInt(rs2Value)));
+  setRegister(inputParams.rd, String(parseInt(rs1Value, Base.BINARY) < parseInt(rs2Value, Base.BINARY)));
   return "";
 }
 
