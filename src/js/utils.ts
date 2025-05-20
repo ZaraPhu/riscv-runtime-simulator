@@ -963,8 +963,13 @@ function lui(inputParams: InstructionInput): string {
   const upperBits: string = decimalToTwosComplement(
     Number(inputParams.imm),
   ).slice(0, 20);
+  
+  let machineCode: string = upperBits;
+  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(2), 5);
+  machineCode = machineCode + zeroExtend("0", 7);
+  
   setRegister(inputParams.rd, upperBits + zeroExtend("0", 12));
-  return "";
+  return machineCode;
 }
 
 function auipc(inputParams: InstructionInput): string {
@@ -987,6 +992,11 @@ function auipc(inputParams: InstructionInput): string {
   const upperBits: string = decimalToTwosComplement(
     Number(inputParams.imm),
   ).slice(0, 20);
+  
+  let machineCode = upperBits;
+  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(2), 5);
+  machineCode = machineCode + zeroExtend("0", 7);
+  
   const result: string = binaryAdd(
     upperBits + zeroExtend("0", 12),
     registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,

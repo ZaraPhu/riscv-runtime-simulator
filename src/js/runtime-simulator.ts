@@ -128,7 +128,7 @@ function parseInput(instructionList: string[]): ParserResult {
   return parsingResult;
 }
 
-function executeInstruction(destructuredInstruction: string[]): boolean {
+function executeInstruction(destructuredInstruction: string[]): string {
   /**
    * Executes a RISC-V instruction based on its type.
    *
@@ -150,11 +150,11 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
     raiseError(
       `Invalid instruction type for opcode ${destructuredInstruction[0]}`,
     );
-    return false;
+    return "";
   }
 
   // Initialize status
-  let status: boolean = true;
+  let machineCode: string = "";
   const instructionFunc: Function = INSTRUCTION_TO_FUNCTION.get(
     destructuredInstruction[0],
   )!;
@@ -169,7 +169,7 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
         rs2: "",
         imm: Number(destructuredInstruction[3]),
       };
-      status = instructionFunc(iTypeInputs);
+      machineCode = instructionFunc(iTypeInputs);
       break;
 
     // R-type instructions (e.g., add, sub) - register-register operations
@@ -180,7 +180,7 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
         rs2: destructuredInstruction[3],
         imm: 0,
       };
-      status = instructionFunc(rTypeInputs);
+      machineCode = instructionFunc(rTypeInputs);
       break;
 
     // U-type instructions (e.g., lui) - upper immediate operations
@@ -192,12 +192,12 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
         rs2: "",
         imm: Number(destructuredInstruction[2]),
       };
-      status = instructionFunc(uTypeInputs);
+      machineCode = instructionFunc(uTypeInputs);
       break;
 
     // Instructions with no operands
     case NONE_TYPE:
-      status = instructionFunc();
+      machineCode = instructionFunc();
       break;
 
     case PSEUDO_TYPE:
@@ -207,14 +207,14 @@ function executeInstruction(destructuredInstruction: string[]): boolean {
         rs2: "",
         imm: Number(destructuredInstruction[3]),
       };
-      status = instructionFunc(pTypeInputs);
+      machineCode = instructionFunc(pTypeInputs);
       break;
     // Handle unexpected instruction types
     default:
       console.log("Got an invalid instruction type.");
       break;
   }
-  return status;
+  return machineCode;
 }
 
 /*** Program Starting Point ***/
@@ -255,19 +255,16 @@ assembleButton?.addEventListener("click", () => {
     clearError();
     setRegister("pc", "0");
     const instructionList = parsingResult.output;
-    let status: boolean = true;
+    let machineCode: string = "";
     for (let i: number = 0; i < instructionList.length; i++) {
-      status = executeInstruction(instructionList[i]);
-      if (!status) {
-        //break;
-      } else {
-        addi({
-          rd: "pc",
-          rs1: "pc",
-          rs2: "",
-          imm: 1,
-        });
-      }
+      machineCode = executeInstruction(instructionList[i]);
+      memory.set(i, machineCode);
+      addi({
+        rd: "pc",
+        rs1: "pc",
+        rs2: "",
+        imm: 1,
+      });
     }
   }
 });
