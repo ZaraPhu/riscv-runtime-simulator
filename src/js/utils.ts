@@ -1,7 +1,6 @@
 /*
 This file is used to hold the helper functions for the runtime simulator script.
-It carries out the assembly instructions. It also holds important constants which
-are used in the runtime simulator.
+It also holds important constants which are used in the runtime simulator.
 Author: Zara Phukan.
 Creation Date: April 15, 2025.
 */
@@ -80,7 +79,9 @@ const PSEUDO_TYPE: OperandType[] = [
   OperandType.REGISTER,
   OperandType.REGISTER,
 ];
-const J_TYPE: OperandType[] = []; // Jump instructions
+const J_TYPE: OperandType[] = [
+  
+]; // Jump instructions
 
 interface InstructionInput {
   rd: string;
@@ -962,6 +963,7 @@ function lui(inputParams: InstructionInput): string {
   const upperBits: string = decimalToTwosComplement(
     Number(inputParams.imm),
   ).slice(0, 20);
+  console.log(upperBits);
   
   let machineCode: string = upperBits;
   machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(2), 5);
@@ -1115,6 +1117,13 @@ function sll(inputParams: InstructionInput): string {
 }
 
 function srl(inputParams: InstructionInput): string {
+  const rs1Bin: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs1)!
+  )!;
+  const rs2Bin: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs2)!
+  )!;
+  
   console.log("Called the srl function.");
   return "";
 }

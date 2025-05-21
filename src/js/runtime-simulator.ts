@@ -96,9 +96,9 @@ function parseInput(instructionList: string[]): ParserResult {
     // Extract just the operands (everything after the opcode)
     const operands: string[] = destructuredInstruction.slice(1);
     // Check if the number of operands matches the expected format
-    if (!(operands.length == format?.length)) {
+    if (!(operands.length == format!.length)) {
       parsingResult.status = ParserStatus.ERR;
-      parsingResult.errMessage += `Line ${i + 1}: ${operands.length} operands supplied but expected ${format?.length} operands.\n`;
+      parsingResult.errMessage += `Line ${i + 1}: ${operands.length} operands supplied but expected ${format!.length} operands.\n`;
       continue;
     }
 
@@ -106,6 +106,11 @@ function parseInput(instructionList: string[]): ParserResult {
     for (let j: number = 0; j < format.length; j++) {
       const expectedOperand: OperandType = format[j];
       if (expectedOperand == OperandType.REGISTER) {
+        if (operands[j].localeCompare("pc") == 0) { 
+          parsingResult.status = ParserStatus.ERR;
+          parsingResult.errMessage += `Line ${i + 1}: Register 'pc' cannot be addressed by any instruction.\n`;
+          continue;
+        }
         // For register operands, check if it's a valid register name
         if (!Array.from(STRINGS_TO_REGISTERS.keys()).includes(operands[j])) {
           parsingResult.status = ParserStatus.ERR;
@@ -120,6 +125,11 @@ function parseInput(instructionList: string[]): ParserResult {
           continue;
         }
         const operand_j: number = parseInt(operands[j]);
+        if ((operand_j < -1 * Math.pow(2, XLEN - 1)) || (operand_j > Math.pow(2, XLEN - 1))) { 
+          parsingResult.status = ParserStatus.ERR;
+          parsingResult.errMessage += `Line ${i + 1}: Immediate value for instruction ${destructuredInstruction[0]} must be between -${Math.pow(2, XLEN - 1)} and ${Math.pow(2, XLEN - 1)} (inclusive).\n`;
+          continue;
+        }
       }
     }
     // Add the processed instruction to the output regardless of validity
@@ -253,18 +263,13 @@ assembleButton?.addEventListener("click", () => {
     raiseError(parsingResult.errMessage);
   } else {
     clearError();
-    setRegister("pc", "0");
+    registers.set(33, zeroExtend("0"));
     const instructionList = parsingResult.output;
     let machineCode: string = "";
     for (let i: number = 0; i < instructionList.length; i++) {
       machineCode = executeInstruction(instructionList[i]);
       memory.set(i, machineCode);
-      addi({
-        rd: "pc",
-        rs1: "pc",
-        rs2: "",
-        imm: 1,
-      });
+      registers.set(33, binaryAdd("1", registers.get(33)!));
     }
   }
 });

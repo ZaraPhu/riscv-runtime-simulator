@@ -14,7 +14,7 @@ The three big things to consider in this runtime simulator are
 3. the Memory Peeker
 
 ### The Register File
-On the leftmost panel, you'll notice a list of "registers". Registers are places you can store data, and they're stored in the form of 32-bit numbers (meaning, that they are each a sequence of 32 0's and 1's). In the background, all of the operations carried out with the data in the registers are done in binary, but you can select different ways of viewing the data using the "Binary", "Octal", "Decimal", and "Hexadecimal" representations.
+On the leftmost panel, you'll notice a list of "registers". Registers are places you can store data, and they're stored in the form of 32-bit numbers (meaning, that each register holds a sequence of 32 0's and 1's). In the background, all of the operations carried out with the data in the registers are done in binary, but you can select different ways of viewing the data using the "Binary", "Octal", "Decimal", and "Hexadecimal" representations.
 
 The "Reset Registers" button simply resets all the registers to be equal to all zeros.
 
@@ -23,18 +23,18 @@ You can see there are 33 registers in total, with each register having a unique 
 ### Instruction List
 A number of instructions from RISC-V have already been implemented in this runtime simulator. You'll find a table below of instructions and their corresponding formats:
 - ADDI rd, rs, imm (add the value in register "rs" to the number "imm", and store the result inside register "rd")
+- MV rd, rs (move the value in register "rs" into register "rd")
 - SLTI rd, rs, imm (store 1 in register "rd" if the value in "rs" is less than the number "imm", otherwise store 0 in register "rd")
 - SLTIU rd, rs, imm (store 1 in register "rd" if the value in "rs" is less than the zero extended number "imm", otherwise store 0 in register "rd")
+- SEQZ rd, rs (store 1 in register "rd" if the value in register "rs" is zero, otherwise store 0 in register "rd")
 - ANDI (compute the bitwise AND between the value in register "rs" and the number "imm", and store the result in register "rd")
 - ORI (compute the bitwise OR between the value in register "rs" and the number "imm", and store the result in register "rd")
 - XORI (compute the bitwise OR between the value in register "rs" and the number "imm", and store the result in register "rd")
 - SLLI rd, rs, imm (compute the left bit shift of the value in register "rs" by "imm" bits and store the result in register "rd")
 - SRLI rd, rs, imm (compute the right bit shift of the value in register "rs" by "imm" bits and store the result in register "rd")
 - SRAI rd, rs, imm (compute the right bit rotation of the value in register "rs" by "imm" bits and store the result in register "rd")
-- LUI rd, imm ()
+- LUI rd, imm (load the upper 20 bits of the number "imm" in binary representation into the upper 20 bits of register "rd", and set the lower 12 bits of register "rd" to 0)
 - AUIPC rd, imm ()
-- MV rd, rs (move the value in register "rs" into register "rd")
-- SEQZ rd, rs (store 1 in register "rd" if the value in register "rs" is zero, otherwise store 0 in register "rd")
 - ADD rd, rs1, rs2 (add the values stored in register "rs1" and "rs2", and store the result in register "rd")
 - SUB rd, rs1, rs2 (subtract the value in register "rs1" from the value in "rs2" and store the result in register "rd")
 
@@ -59,4 +59,4 @@ Here is what this program does line by line:
 3. Store the result of 5 - 3 (x1 - x2) in register x3
 
 ## Appendix A: The RISC-V ISA
-This runtime simulator will be trying to match the latest ratfound at ratified technical specifications for the [RISC-V ISA](https://lf-riscv.atlassian.net/wiki/spaces/HOME/pages/16154769/RISC-V+Technical+Specifications). I will begin by pouring through the
+This runtime simulator will be trying to match the latest ratified specification for the [RISC-V ISA](https://lf-riscv.atlassian.net/wiki/spaces/HOME/pages/16154769/RISC-V+Technical+Specifications). Specifically, this project implements the fully ratified R32I (Base Integer) ISA.
