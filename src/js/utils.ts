@@ -1016,13 +1016,13 @@ function add(inputParams: InstructionInput): string {
    * @param rs2 - The second source register name containing the second operand
    * @returns An empty string as the machine code representation is not implemented
    */
-  const rs1Value: string = registers.get(
+  const rs1Bin: string = registers.get(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
   )!;
-  const rs2Value: string = registers.get(
+  const rs2Bin: string = registers.get(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
   )!;
-  const sumValue: string = binaryAdd(rs1Value, rs2Value);
+  const sumValue: string = binaryAdd(rs1Bin, rs2Bin);
   setRegister(inputParams.rd, signExtend(sumValue));
   return "";
 }
@@ -1040,13 +1040,13 @@ function sub(inputParams: InstructionInput): string {
    * @param rs2 - The second source register name containing the subtrahend
    * @returns An empty string as the machine code representation is not implemented
    */
-  const rs1Value: string = registers.get(
+  const rs1Bin: string = registers.get(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
   )!;
-  const rs2Value: string = registers.get(
+  const rs2Bin: string = registers.get(
     STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
   )!;
-  const subValue: string = binarySub(rs1Value, rs2Value);
+  const subValue: string = binarySub(rs1Bin, rs2Bin);
   setRegister(inputParams.rd, signExtend(subValue));
   return "";
 }
@@ -1064,17 +1064,17 @@ function slt(inputParams: InstructionInput): string {
    * @param rs2 - The second source register name containing the second value to compare
    * @returns An empty string as the machine code representation is not implemented
    */
-  const rs1Value: string = registers.get(
+  const rs1Bin: string = registers.get(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
   )!;
-  const rs2Value: string = registers.get(
+  const rs2Bin: string = registers.get(
     STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
   )!;
   setRegister(
     inputParams.rd,
     zeroExtend(
       String(
-        twosComplementToDecimal(rs1Value) < twosComplementToDecimal(rs2Value),
+        twosComplementToDecimal(rs1Bin) < twosComplementToDecimal(rs2Bin),
       ),
     ),
   );
@@ -1093,17 +1093,23 @@ function sltu(inputParams: InstructionInput): string {
    * @param rs2 - The second source register name containing the second value to compare
    * @returns An empty string as the machine code representation is not implemented
    */
-  const rs1Value: string = registers.get(
+  const rs1Bin: string = registers.get(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
   )!;
-  const rs2Value: string = registers.get(
+  const rs2Bin: string = registers.get(
     STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
   )!;
-  setRegister(inputParams.rd, String(parseInt(rs1Value, Base.BINARY) < parseInt(rs2Value, Base.BINARY)));
+  setRegister(inputParams.rd, String(parseInt(rs1Bin, Base.BINARY) < parseInt(rs2Bin, Base.BINARY)));
   return "";
 }
 
 function sll(inputParams: InstructionInput): string {
+  const rs1Bin: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs1)!
+  )!;
+  const rs2Bin: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs2)!
+  )!;
   console.log("Called the sll function.");
   return "";
 }
