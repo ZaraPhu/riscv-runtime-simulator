@@ -44,7 +44,7 @@ Legend:
 - imm - immediate value (a number)
 
 ### The Memory Peeker
-Currently, the Memory Peeker has not been implemented. When it is ready, this component will display the binary (machine code) representation of the instructions. 
+Currently, the Memory Peeker has not been implemented. When it is ready, this component will display the binary (machine code) representation of the instructions.
 
 ## An Example Program
 Consider the following program
@@ -61,4 +61,4 @@ Here is what this program does line by line:
 ## Appendix A: The RISC-V ISA
 This runtime simulator will be trying to match the latest ratified specification for the [RISC-V ISA](https://lf-riscv.atlassian.net/wiki/spaces/HOME/pages/16154769/RISC-V+Technical+Specifications). Specifically, this project implements the fully ratified R32I (Base Integer) ISA.
 
-## Appendix B: 
+## Appendix B:

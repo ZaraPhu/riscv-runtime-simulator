@@ -1100,7 +1100,7 @@ function slt(inputParams: InstructionInput): string {
   machineCode = machineCode + "000";
   machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5);
   machineCode = machineCode + zeroExtend("0", 7);
-  return machineCodeine;
+  return machineCode;
 }
 function sltu(inputParams: InstructionInput): string {
   /**
