@@ -74,12 +74,13 @@ const R_TYPE: OperandType[] = [
 
 // Special instruction type formats
 const NONE_TYPE: OperandType[] = []; // No operands (e.g., NOP)
-const PSEUDO_TYPE: OperandType[] = [
+const PSEUDO_TYPE_A: OperandType[] = [
   // Pseudo-instructions with 2 registers
   OperandType.REGISTER,
   OperandType.REGISTER,
 ];
-const J_TYPE: OperandType[] = []; // Jump instructions
+const PSEUDO_TYPE_B: OperandType[] = [OperandType.IMMEDIATE];
+const J_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.IMMEDIATE]; // Jump instructions
 
 interface InstructionInput {
   rd: string;
@@ -209,13 +210,16 @@ const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   ["SRL", R_TYPE], // Shift right logical
   ["SRA", R_TYPE],
 
+  // J-Tpe instructions
+  ["JAL", J_TYPE], // Jump and link
+  ["JALR", I_TYPE], // Jump and link register
+
   // Special instructions
   ["NOP", NONE_TYPE], // No operation
-  ["MV", PSEUDO_TYPE], // Move register to register
-  ["SEQZ", PSEUDO_TYPE], // Set if equal to zero
-  ["NOT", PSEUDO_TYPE], // Bitwise NOT
-  ["JAL", J_TYPE], // Jump and link
-  ["JALR", J_TYPE], // Jump and link register
+  ["MV", PSEUDO_TYPE_A],
+  ["J", PSEUDO_TYPE_B],
+  ["SEQZ", PSEUDO_TYPE_A],
+  ["NOT", PSEUDO_TYPE_A], // Bitwise NOT
 ]);
 
 const INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
@@ -237,9 +241,13 @@ const INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["SLL", sll],
   ["SRL", srl],
   ["SRA", sra],
+  ["JAL", jal],
+  ["JALR", jalr],
+  ["J", j],
   ["NOP", nop],
   ["MV", mv],
   ["SEQZ", seqz],
+  ["NOT", not],
 ]);
 
 /*** Functions ***/
@@ -361,9 +369,6 @@ function setRegister(
   // Convert register name to register number
   const register: number = STRINGS_TO_REGISTERS.get(rd)!;
   let valCleaned: string = extendFunc(register == 0 ? "0" : val);
-  valCleaned = extendFunc(
-    register == 33 ? registers.get(STRINGS_TO_REGISTERS.get("pc")!)! : val,
-  );
 
   // register values are always stored as binary strings
   registers.set(register, valCleaned);
@@ -1305,4 +1310,49 @@ function sra(inputParams: InstructionInput): string {
     );
   machineCode = machineCode + zeroExtend("0", 7);
   return machineCode;
+}
+
+function jal(inputParams: InstructionInput) {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-20);
+  setRegister(
+    inputParams.rd,
+    binaryAdd(
+      registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,
+      "100",
+      zeroExtend,
+    ),
+  );
+  setRegister(
+    "pc",
+    binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, immBin),
+  );
+  // need complex machine code translation for this one
+  return "";
+}
+
+function j(inputParams: InstructionInput) {
+  inputParams.rd = "x0";
+  return jal(inputParams);
+}
+
+function not(inputParams: InstructionInput) { 
+  const bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
+  for (let i = 0; i < bits.length; i++) { 
+    bits[i] = (bits[i].localeCompare("1") == 0) ? "0" : "1";
+  }
+  setRegister(
+    inputParams.rd,
+    bits.join("")
+  );
+  return "";
+}
+
+function jalr(inputParams: InstructionInput) { 
+  const result: string[] = binaryAdd(decimalToTwosComplement(inputParams.imm).slice(-12), registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!).split("");
+  result[-1] = "0";
+  setRegister(
+    inputParams.rd,
+    result.join("")
+  );
+  return "";
 }
