@@ -60,3 +60,5 @@ Here is what this program does line by line:
 
 ## Appendix A: The RISC-V ISA
 This runtime simulator will be trying to match the latest ratified specification for the [RISC-V ISA](https://lf-riscv.atlassian.net/wiki/spaces/HOME/pages/16154769/RISC-V+Technical+Specifications). Specifically, this project implements the fully ratified R32I (Base Integer) ISA.
+
+## Appendix B: 

@@ -195,7 +195,6 @@ function executeInstruction(destructuredInstruction: string[]): string {
 
     // U-type instructions (e.g., lui) - upper immediate operations
     case U_TYPE:
-      console.log("U type");
       const uTypeInputs: InstructionInput = {
         rd: destructuredInstruction[1],
         rs1: "",
@@ -207,7 +206,7 @@ function executeInstruction(destructuredInstruction: string[]): string {
 
     // Instructions with no operands
     case NONE_TYPE:
-      machineCode = instructionFunc();
+      machineCode = instructionFunc({});
       break;
 
     case PSEUDO_TYPE:
@@ -276,5 +275,8 @@ assembleButton?.addEventListener("click", () => {
 
 resetRegistersButton?.addEventListener("click", () => {
   // reset all registers to 0
-  zeroAllRegisters();
+  for (let i: number = 0; i < XLEN + 1; i++) {
+    registers.set(i, zeroExtend("0"));
+  }
+  updateRegisterDisplays();
 });
