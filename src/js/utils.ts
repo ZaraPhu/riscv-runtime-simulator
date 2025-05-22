@@ -250,6 +250,36 @@ const INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["NOT", not],
 ]);
 
+interface InstructionDecodeInfo { 
+  funct3: string | undefined,
+  funct7: string | undefined,
+  opcode: string | undefined
+}
+
+const INSTRUCTION_TO_DECODE_INFO: ReadonlyMap<string, InstructionDecodeInfo> = new Map([
+  ["ADDI", {funct3: "000", funct7: undefined, opcode: "0010011"}],
+  ["SLTI", {funct3: "010", funct7: undefined, opcode: "0010011"}],
+  ["SLTIU", {funct3: "011", funct7: undefined, opcode: "0010011"}],
+  ["ANDI", {funct3: "111", funct7: undefined, opcode: "0010011"}],
+  ["ORI", {funct3: "110", funct7: undefined, opcode: "0010011"}],
+  ["XORI", {funct3: "100", funct7: undefined, opcode: "0010011"}],
+  ["SLLI", {funct3: "001", funct7: undefined, opcode: "0010011"}],
+  ["SRLI", {funct3: "101", funct7: undefined, opcode: "0010011"}],
+  ["SRAI", {funct3: "101", funct7: undefined, opcode: "0010011"}],
+  ["LUI", {funct3: undefined, funct7: undefined, opcode: "0110111"}],
+  ["AUIPC", {funct3: undefined, funct7: undefined, opcode: "0010111"}],
+  ["ADD", {funct3: "000", funct7: "0000000", opcode: "0110011"}],
+  ["SUB", {funct3: "000", funct7: "0100000", opcode: "0110011"}],
+  ["SLT", {funct3: "010", funct7: "0000000", opcode: "0110011"}],
+  ["SLTU", {funct3: "011", funct7: "0000000", opcode: "0110011"}],
+  ["AND", {funct3: "111", funct7: "0000000", opcode: "0110011"}],
+  ["OR", {funct3: "110", funct7: "0000000", opcode: "0110011"}],
+  ["XOR", {funct3: "100", funct7: "0000000", opcode: "0110011"}],
+  ["SLL", {funct3: "001", funct7: "0000000", opcode: "0110011"}],
+  ["SRL", {funct3: "101", funct7: "0000000", opcode: "0110011"}],
+  ["SRA", {funct3: "101", funct7: "0100000", opcode: "0110011"}],
+]);
+
 /*** Functions ***/
 function binaryToHex(binVal: string): string {
   /**
@@ -531,20 +561,20 @@ function addi(inputParams: InstructionInput): string {
   const binarySum: string = binaryAdd(sourceValue, immBin);
   setRegister(inputParams.rd, binarySum);
 
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("ADDI")!;
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(String(inputParams.rs1))!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + "000";
+  machineCode = machineCode + decodeInfo.funct3;
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-  const opcode: string = zeroExtend("0", 7); // todo: figure out opcodes
-  machineCode = machineCode + opcode;
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode; // return machine code representation
 }
 
@@ -599,20 +629,20 @@ function slti(inputParams: InstructionInput): string {
       : "0",
   );
 
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SLTI")!;
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + "001";
+  machineCode = machineCode + decodeInfo.funct3;
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-  const opcode: string = zeroExtend("0", 7); // todo: figure out opcodes
-  machineCode = machineCode + opcode;
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -645,20 +675,20 @@ function sltiu(inputParams: InstructionInput): string {
       : "0",
   );
 
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SLTIU")!;
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + "010";
+  machineCode = machineCode + decodeInfo.funct3;
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
-  machineCode = machineCode + opcode;
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -705,20 +735,20 @@ function andi(inputParams: InstructionInput): string {
   }
   setRegister(inputParams.rd, result.join(""));
 
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("ANDI")!;
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + "011";
+  machineCode = machineCode + decodeInfo.funct3;
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
-  machineCode = machineCode + opcode;
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -748,20 +778,20 @@ function ori(inputParams: InstructionInput): string {
   }
   setRegister(inputParams.rd, result.join(""));
 
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("ORI")!;
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + "100";
+  machineCode = machineCode + decodeInfo.funct3;
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
-  machineCode = machineCode + opcode;
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -794,20 +824,20 @@ function xori(inputParams: InstructionInput): string {
   }
   setRegister(inputParams.rd, result.join(""));
 
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("XORI")!;
   let machineCode: string = immBin;
   const sourceRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + "101";
+  machineCode = machineCode + decodeInfo.funct3;
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
-  machineCode = machineCode + opcode;
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -833,20 +863,20 @@ function slli(inputParams: InstructionInput): string {
   const result: string = (sourceBin + zeroExtend("0", immVal)).slice(XLEN);
   setRegister(inputParams.rd, result);
 
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SLLI")!;
   let machineCode: string = zeroExtend(immBin, 12);
   const sourceRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + "000";
+  machineCode = machineCode + decodeInfo.funct3;
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
-  machineCode = machineCode + opcode;
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -875,20 +905,20 @@ function srli(inputParams: InstructionInput): string {
   );
   setRegister(inputParams.rd, result);
 
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SRLI")!;
   let machineCode: string = zeroExtend(immBin, 12);
   const sourceRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + "010";
+  machineCode = machineCode + decodeInfo.funct3;
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
-  machineCode = machineCode + opcode;
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -920,20 +950,20 @@ function srai(inputParams: InstructionInput): string {
   }
   setRegister(inputParams.rd, result);
 
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SRAI")!;
   let machineCode: string = "01" + zeroExtend(immBin, 10);
   const sourceRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + "011";
+  machineCode = machineCode + decodeInfo.funct3;
   const destRegisterBin: string = zeroExtend(
     STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
     5,
   );
   machineCode = machineCode + destRegisterBin;
-  const opcode: string = zeroExtend("0", 7); // TODO: figure out opcodes
-  machineCode = machineCode + opcode;
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -954,6 +984,7 @@ function lui(inputParams: InstructionInput): string {
   ).slice(0, 20);
   setRegister(inputParams.rd, upperBits + zeroExtend("0", 12));
 
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("LUI")!;
   let machineCode: string = upperBits;
   machineCode =
     machineCode +
@@ -961,7 +992,7 @@ function lui(inputParams: InstructionInput): string {
       STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + zeroExtend("0", 7);
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -991,6 +1022,7 @@ function auipc(inputParams: InstructionInput): string {
   );
   setRegister(inputParams.rd, result);
 
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("AUIPC")!;
   let machineCode = upperBits;
   machineCode =
     machineCode +
@@ -998,7 +1030,7 @@ function auipc(inputParams: InstructionInput): string {
       STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + zeroExtend("0", 7);
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -1020,7 +1052,8 @@ function add(inputParams: InstructionInput): string {
   );
   setRegister(inputParams.rd, signExtend(sumValue));
 
-  let machineCode = "0000000";
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("ADD")!;
+  let machineCode = decodeInfo.funct7;
   machineCode =
     machineCode +
     zeroExtend(
@@ -1033,14 +1066,14 @@ function add(inputParams: InstructionInput): string {
       STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + "000";
+  machineCode = machineCode + decodeInfo.funct3;
   machineCode =
     machineCode +
     zeroExtend(
       STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + zeroExtend("0", 7);
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -1062,8 +1095,9 @@ function sub(inputParams: InstructionInput): string {
     registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!,
   );
   setRegister(inputParams.rd, signExtend(subValue));
-
-  let machineCode = "0100000";
+  
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SUB")!;
+  let machineCode = decodeInfo.funct7;
   machineCode =
     machineCode +
     zeroExtend(
@@ -1076,14 +1110,14 @@ function sub(inputParams: InstructionInput): string {
       STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + "000";
+  machineCode = machineCode + decodeInfo.funct3;
   machineCode =
     machineCode +
     zeroExtend(
       STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + zeroExtend("0", 7);
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -1100,12 +1134,6 @@ function slt(inputParams: InstructionInput): string {
    * @param rs2 - The second source register name containing the second value to compare
    * @returns An empty string as the machine code representation is not implemented
    */
-  const rs1Bin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
-  const rs2Bin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
-  )!;
   setRegister(
     inputParams.rd,
     zeroExtend(
@@ -1120,7 +1148,8 @@ function slt(inputParams: InstructionInput): string {
     ),
   );
 
-  let machineCode = "0000000";
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SLT")!;
+  let machineCode = decodeInfo.funct7;
   machineCode =
     machineCode +
     zeroExtend(
@@ -1133,14 +1162,14 @@ function slt(inputParams: InstructionInput): string {
       STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + "000";
+  machineCode = machineCode + decodeInfo.funct3;
   machineCode =
     machineCode +
     zeroExtend(
       STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + zeroExtend("0", 7);
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 function sltu(inputParams: InstructionInput): string {
@@ -1170,7 +1199,8 @@ function sltu(inputParams: InstructionInput): string {
     ),
   );
 
-  let machineCode = "0000000";
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SLTU")!;
+  let machineCode = decodeInfo.funct7;
   machineCode =
     machineCode +
     zeroExtend(
@@ -1183,14 +1213,14 @@ function sltu(inputParams: InstructionInput): string {
       STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + "000";
+  machineCode = machineCode + decodeInfo.funct3;
   machineCode =
     machineCode +
     zeroExtend(
       STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + zeroExtend("0", 7);
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -1207,7 +1237,8 @@ function sll(inputParams: InstructionInput): string {
     (sourceBin + zeroExtend("0", rs2Val)).slice(-XLEN),
   );
 
-  let machineCode = "0000000";
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SLL")!;
+  let machineCode = decodeInfo.funct7;
   machineCode =
     machineCode +
     zeroExtend(
@@ -1220,14 +1251,14 @@ function sll(inputParams: InstructionInput): string {
       STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + "000";
+  machineCode = machineCode + decodeInfo.funct3;
   machineCode =
     machineCode +
     zeroExtend(
       STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + zeroExtend("0", 7);
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -1244,7 +1275,8 @@ function srl(inputParams: InstructionInput): string {
     (zeroExtend("0", rs2Val) + sourceBin).substring(0, XLEN),
   );
 
-  let machineCode = "0000000";
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SRL")!;
+  let machineCode = decodeInfo.funct7;
   machineCode =
     machineCode +
     zeroExtend(
@@ -1257,14 +1289,14 @@ function srl(inputParams: InstructionInput): string {
       STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + "000";
+  machineCode = machineCode + decodeInfo.funct3;
   machineCode =
     machineCode +
     zeroExtend(
       STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + zeroExtend("0", 7);
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -1288,7 +1320,8 @@ function sra(inputParams: InstructionInput): string {
     );
   }
 
-  let machineCode = "0000000";
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SRA")!;
+  let machineCode = decodeInfo.funct7;
   machineCode =
     machineCode +
     zeroExtend(
@@ -1301,14 +1334,14 @@ function sra(inputParams: InstructionInput): string {
       STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + "000";
+  machineCode = machineCode + decodeInfo.funct3;
   machineCode =
     machineCode +
     zeroExtend(
       STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
       5,
     );
-  machineCode = machineCode + zeroExtend("0", 7);
+  machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
 
@@ -1322,11 +1355,12 @@ function jal(inputParams: InstructionInput) {
       zeroExtend,
     ),
   );
-  setRegister(
-    "pc",
-    binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, immBin),
-  );
-  // need complex machine code translation for this one
+  for (let i = 0; i < 2; i++) { // immediate is multiple of 2 bytes
+    setRegister(
+      "pc",
+      binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, immBin),
+    );
+  }
   return "";
 }
 
@@ -1335,24 +1369,23 @@ function j(inputParams: InstructionInput) {
   return jal(inputParams);
 }
 
-function not(inputParams: InstructionInput) { 
-  const bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
-  for (let i = 0; i < bits.length; i++) { 
-    bits[i] = (bits[i].localeCompare("1") == 0) ? "0" : "1";
+function not(inputParams: InstructionInput) {
+  const bits: string[] = registers
+    .get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
+    .split("");
+  for (let i = 0; i < bits.length; i++) {
+    bits[i] = bits[i].localeCompare("1") == 0 ? "0" : "1";
   }
-  setRegister(
-    inputParams.rd,
-    bits.join("")
-  );
+  setRegister(inputParams.rd, bits.join(""));
   return "";
 }
 
-function jalr(inputParams: InstructionInput) { 
-  const result: string[] = binaryAdd(decimalToTwosComplement(inputParams.imm).slice(-12), registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!).split("");
+function jalr(inputParams: InstructionInput) {
+  const result: string[] = binaryAdd(
+    decimalToTwosComplement(inputParams.imm).slice(-12),
+    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!,
+  ).split("");
   result[-1] = "0";
-  setRegister(
-    inputParams.rd,
-    result.join("")
-  );
+  setRegister(inputParams.rd, result.join(""));
   return "";
 }
