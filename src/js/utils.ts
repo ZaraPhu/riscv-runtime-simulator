@@ -207,6 +207,7 @@ const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   ["SLTU", R_TYPE], // Set less than unsigned
   ["SLL", R_TYPE], // Shift left logical
   ["SRL", R_TYPE], // Shift right logical
+  ["SRA", R_TYPE],
 
   // Special instructions
   ["NOP", NONE_TYPE], // No operation
@@ -235,6 +236,7 @@ const INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["SLTU", sltu],
   ["SLL", sll],
   ["SRL", srl],
+  ["SRA", sra],
   ["NOP", nop],
   ["MV", mv],
   ["SEQZ", seqz],
@@ -554,6 +556,13 @@ function mv(inputParams: InstructionInput): string {
    * @param rs - The source register name containing the value to be copied
    * @returns The machine code representation of the instruction as a binary string
    */
+  inputParams.imm = 0;
+  return addi(inputParams);
+}
+
+function nop(inputParams: InstructionInput): string {
+  inputParams.rd = "x0";
+  inputParams.rs1 = "x0";
   inputParams.imm = 0;
   return addi(inputParams);
 }
@@ -1063,7 +1072,12 @@ function sub(inputParams: InstructionInput): string {
       5,
     );
   machineCode = machineCode + "000";
-  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5);
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
+      5,
+    );
   machineCode = machineCode + zeroExtend("0", 7);
   return machineCode;
 }
@@ -1090,15 +1104,37 @@ function slt(inputParams: InstructionInput): string {
   setRegister(
     inputParams.rd,
     zeroExtend(
-      String(twosComplementToDecimal(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!) < twosComplementToDecimal(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!)),
+      String(
+        twosComplementToDecimal(
+          registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!,
+        ) <
+          twosComplementToDecimal(
+            registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!,
+          ),
+      ),
     ),
   );
-  
+
   let machineCode = "0000000";
-  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY), 5);
-  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5);
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
+      5,
+    );
   machineCode = machineCode + "000";
-  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5);
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
+      5,
+    );
   machineCode = machineCode + zeroExtend("0", 7);
   return machineCode;
 }
@@ -1117,41 +1153,156 @@ function sltu(inputParams: InstructionInput): string {
    */
   setRegister(
     inputParams.rd,
-    String(parseInt(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!, Base.BINARY) < parseInt(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!, Base.BINARY)),
+    String(
+      parseInt(
+        registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!,
+        Base.BINARY,
+      ) <
+        parseInt(
+          registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!,
+          Base.BINARY,
+        ),
+    ),
   );
-  
+
   let machineCode = "0000000";
-  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY), 5);
-  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5);
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
+      5,
+    );
   machineCode = machineCode + "000";
-  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5);
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
+      5,
+    );
   machineCode = machineCode + zeroExtend("0", 7);
   return machineCode;
 }
 
 function sll(inputParams: InstructionInput): string {
-  const rs1Bin: string = registers.get(
+  const rs2Val: number = parseInt(
+    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.slice(-5),
+    Base.BINARY,
+  );
+  const sourceBin: string = registers.get(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
   )!;
-  const rs2Bin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
-  )!;
-  return "";
+  setRegister(
+    inputParams.rd,
+    (sourceBin + zeroExtend("0", rs2Val)).slice(-XLEN),
+  );
+
+  let machineCode = "0000000";
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode = machineCode + "000";
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode = machineCode + zeroExtend("0", 7);
+  return machineCode;
 }
 
 function srl(inputParams: InstructionInput): string {
-  const rs1Bin: string = registers.get(
+  const rs2Val: number = parseInt(
+    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.slice(-5),
+    Base.BINARY,
+  );
+  const sourceBin: string = registers.get(
     STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
   )!;
-  const rs2Bin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
-  )!;
-  return "";
+  setRegister(
+    inputParams.rd,
+    (zeroExtend("0", rs2Val) + sourceBin).substring(0, XLEN),
+  );
+
+  let machineCode = "0000000";
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode = machineCode + "000";
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode = machineCode + zeroExtend("0", 7);
+  return machineCode;
 }
 
-function nop(inputParams: InstructionInput): string {
-  inputParams.rd = "x0";
-  inputParams.rs1 = "x0";
-  inputParams.imm = 0;
-  return addi(inputParams);
+function sra(inputParams: InstructionInput): string {
+  const rs2Val: number = parseInt(
+    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.slice(-5),
+    Base.BINARY,
+  );
+  const sourceBin: string = registers.get(
+    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
+  )!;
+  if (inputParams.rs1[0].localeCompare("0") == 0) {
+    setRegister(
+      inputParams.rd,
+      (zeroExtend("0", rs2Val) + sourceBin).substring(0, XLEN),
+    );
+  } else {
+    setRegister(
+      inputParams.rd,
+      (zeroExtend("1", rs2Val) + sourceBin).substring(0, XLEN),
+    );
+  }
+
+  let machineCode = "0000000";
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode = machineCode + "000";
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode = machineCode + zeroExtend("0", 7);
+  return machineCode;
 }
