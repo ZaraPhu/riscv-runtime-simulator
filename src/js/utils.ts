@@ -939,11 +939,14 @@ function lui(inputParams: InstructionInput): string {
     Number(inputParams.imm),
   ).slice(0, 20);
   setRegister(inputParams.rd, upperBits + zeroExtend("0", 12));
-  
+
   let machineCode: string = upperBits;
   machineCode =
     machineCode +
-    zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5);
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
+      5,
+    );
   machineCode = machineCode + zeroExtend("0", 7);
   return machineCode;
 }
@@ -973,11 +976,14 @@ function auipc(inputParams: InstructionInput): string {
     registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,
   );
   setRegister(inputParams.rd, result);
-  
+
   let machineCode = upperBits;
   machineCode =
     machineCode +
-    zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5);
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
+      5,
+    );
   machineCode = machineCode + zeroExtend("0", 7);
   return machineCode;
 }
@@ -996,17 +1002,30 @@ function add(inputParams: InstructionInput): string {
    */
   const sumValue: string = binaryAdd(
     registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!,
-    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!
+    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!,
   );
   setRegister(inputParams.rd, signExtend(sumValue));
-  
+
   let machineCode = "0000000";
   machineCode =
-    machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY), 5);
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
+      5,
+    );
   machineCode =
-    machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5);
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
+      5,
+    );
   machineCode = machineCode + "000";
-  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5);
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
+      5,
+    );
   machineCode = machineCode + zeroExtend("0", 7);
   return machineCode;
 }
@@ -1024,15 +1043,29 @@ function sub(inputParams: InstructionInput): string {
    * @param rs2 - The second source register name containing the subtrahend
    * @returns An empty string as the machine code representation is not implemented
    */
-  const rs1Bin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
-  const rs2Bin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
-  )!;
-  const subValue: string = binarySub(rs1Bin, rs2Bin);
+  const subValue: string = binarySub(
+    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!,
+    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!,
+  );
   setRegister(inputParams.rd, signExtend(subValue));
-  return "";
+
+  let machineCode = "0100000";
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode =
+    machineCode +
+    zeroExtend(
+      STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY),
+      5,
+    );
+  machineCode = machineCode + "000";
+  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5);
+  machineCode = machineCode + zeroExtend("0", 7);
+  return machineCode;
 }
 
 function slt(inputParams: InstructionInput): string {
@@ -1057,10 +1090,17 @@ function slt(inputParams: InstructionInput): string {
   setRegister(
     inputParams.rd,
     zeroExtend(
-      String(twosComplementToDecimal(rs1Bin) < twosComplementToDecimal(rs2Bin)),
+      String(twosComplementToDecimal(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!) < twosComplementToDecimal(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!)),
     ),
   );
-  return "";
+  
+  let machineCode = "0000000";
+  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY), 5);
+  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5);
+  machineCode = machineCode + "000";
+  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5);
+  machineCode = machineCode + zeroExtend("0", 7);
+  return machineCodeine;
 }
 function sltu(inputParams: InstructionInput): string {
   /**
@@ -1075,17 +1115,18 @@ function sltu(inputParams: InstructionInput): string {
    * @param rs2 - The second source register name containing the second value to compare
    * @returns An empty string as the machine code representation is not implemented
    */
-  const rs1Bin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
-  const rs2Bin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs2)!,
-  )!;
   setRegister(
     inputParams.rd,
-    String(parseInt(rs1Bin, Base.BINARY) < parseInt(rs2Bin, Base.BINARY)),
+    String(parseInt(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!, Base.BINARY) < parseInt(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!, Base.BINARY)),
   );
-  return "";
+  
+  let machineCode = "0000000";
+  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY), 5);
+  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5);
+  machineCode = machineCode + "000";
+  machineCode = machineCode + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5);
+  machineCode = machineCode + zeroExtend("0", 7);
+  return machineCode;
 }
 
 function sll(inputParams: InstructionInput): string {
