@@ -250,7 +250,7 @@ const INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["NOT", not],
 ]);
 
-interface InstructionDecodeInfo { 
+interface InstructionDecodeInfo {
   funct3: string | undefined,
   funct7: string | undefined,
   opcode: string | undefined
@@ -278,6 +278,8 @@ const INSTRUCTION_TO_DECODE_INFO: ReadonlyMap<string, InstructionDecodeInfo> = n
   ["SLL", {funct3: "001", funct7: "0000000", opcode: "0110011"}],
   ["SRL", {funct3: "101", funct7: "0000000", opcode: "0110011"}],
   ["SRA", {funct3: "101", funct7: "0100000", opcode: "0110011"}],
+  ["JAL", {funct3: undefined, funct7: undefined, opcode: "1101111"}],
+  ["JALR", {funct3: "000", funct7: undefined, opcode: "1100111"}]
 ]);
 
 /*** Functions ***/
@@ -1095,7 +1097,7 @@ function sub(inputParams: InstructionInput): string {
     registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!,
   );
   setRegister(inputParams.rd, signExtend(subValue));
-  
+
   const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("SUB")!;
   let machineCode = decodeInfo.funct7;
   machineCode =
@@ -1361,7 +1363,17 @@ function jal(inputParams: InstructionInput) {
       binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, immBin),
     );
   }
-  return "";
+
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("JAL")!;
+  let machineCode: string = (
+    immBin.charAt(19)
+    + immBin.slice(0, 9)
+    + immBin.charAt(10)
+    + immBin.slice(11, 18)
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5)
+    + decodeInfo.opcode
+  );
+  return machineCode;
 }
 
 function j(inputParams: InstructionInput) {
@@ -1377,15 +1389,28 @@ function not(inputParams: InstructionInput) {
     bits[i] = bits[i].localeCompare("1") == 0 ? "0" : "1";
   }
   setRegister(inputParams.rd, bits.join(""));
+
   return "";
 }
 
 function jalr(inputParams: InstructionInput) {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  const sourceRegisterVal: number = STRINGS_TO_REGISTERS.get(inputParams.rs1)!;
   const result: string[] = binaryAdd(
-    decimalToTwosComplement(inputParams.imm).slice(-12),
-    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!,
+    immBin,
+    registers.get(sourceRegisterVal)!
   ).split("");
   result[-1] = "0";
-  setRegister(inputParams.rd, result.join(""));
-  return "";
+  setRegister("pc", binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, result.join("")));
+  setRegister(inputParams.rd, binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, "100", zeroExtend));
+
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_DECODE_INFO.get("JAL")!;
+  let machineCode: string = (
+    immBin
+    + zeroExtend(sourceRegisterVal.toString(Base.BINARY), 5)
+    + decodeInfo.funct3
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5)
+    + decodeInfo.opcode
+  );
+  return machineCode;
 }

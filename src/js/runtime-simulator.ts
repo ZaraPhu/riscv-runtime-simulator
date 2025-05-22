@@ -244,7 +244,18 @@ function executeInstruction(destructuredInstruction: string[]): string {
         rs1: "",
         rs2: "",
         imm: Number(destructuredInstruction[1])
+      };
+      machineCode = instructionFunc(p2TypeInputes);
+      break;
+    case J_TYPE:
+      const jTypeInputs: InstructionInput = {
+        rd: destructuredInstruction[1],
+        rs1: "",
+        rs2: "",
+        imm: Number(destructuredInstruction[2])
       }
+      machineCode = instructionFunc(jTypeInputs);
+      break;
     default:
       console.log("Got an invalid instruction type.");
       break;
