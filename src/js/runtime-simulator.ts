@@ -14,6 +14,9 @@ const assemblyEditor = document.querySelector(
 const assembleButton = document.querySelector(
   "#assemble-button",
 ) as HTMLButtonElement | null;
+const stepButton = document.querySelector(
+  "#step-button",
+) as HTMLButtonElement | null;
 const errorText = document.querySelector(
   "#error-text",
 ) as HTMLParagraphElement | null;
@@ -243,7 +246,7 @@ function executeInstruction(destructuredInstruction: string[]): string {
         rd: "",
         rs1: "",
         rs2: "",
-        imm: Number(destructuredInstruction[1])
+        imm: Number(destructuredInstruction[1]),
       };
       machineCode = instructionFunc(p2TypeInputes);
       break;
@@ -252,8 +255,8 @@ function executeInstruction(destructuredInstruction: string[]): string {
         rd: destructuredInstruction[1],
         rs1: "",
         rs2: "",
-        imm: Number(destructuredInstruction[2])
-      }
+        imm: Number(destructuredInstruction[2]),
+      };
       machineCode = instructionFunc(jTypeInputs);
       break;
     default:
@@ -264,6 +267,9 @@ function executeInstruction(destructuredInstruction: string[]): string {
 }
 
 /*** Program Starting Point ***/
+let instructionsList: string[][] = [];
+let currentLineNumber: number = 0;
+
 // Initialize registers with default values in binary
 updateRegisterDisplays();
 
@@ -288,32 +294,36 @@ hexadecimalCheck.addEventListener("click", () => {
 // Add click event listener to the assemble button
 assembleButton?.addEventListener("click", () => {
   // Split the assembly editor's content into an array of instructions
-  const instructionsList: string[] = assemblyEditor?.value.split("\n") || [];
+  const inputInstructions: string[] = assemblyEditor?.value.split("\n") || [];
 
   // Call the assembleInput function to validate the instructions
   // and store the result in status (true = valid, false = invalid)
-  const parsingResult: ParserResult = parseInput(instructionsList);
+  const parsingResult: ParserResult = parseInput(inputInstructions);
 
   // If the assembly is invalid, log which line caused the error
   if (parsingResult.status == ParserStatus.ERR) {
     raiseError(parsingResult.errMessage);
   } else {
     clearError();
-    registers.set(33, zeroExtend("0"));
-    const instructionList = parsingResult.output;
-    let machineCode: string = "";
-    for (let i: number = 0; i < instructionList.length; i++) {
-      machineCode = executeInstruction(instructionList[i]);
-      memory.set(i, machineCode);
-      setRegister(
-        "pc",
-        binaryAdd(
-          registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,
-          "100",
-          zeroExtend,
-        ),
-      );
-    }
+    setRegister("pc", zeroExtend("0"));
+    instructionsList = parsingResult.output;
+    currentLineNumber = 0;
+  }
+});
+
+stepButton?.addEventListener("click", () => {
+  if (instructionsList.length == 0) {
+    raiseError("Instructions have not yet been assembled.");
+  } else {
+    let machineCode: string = executeInstruction(instructionsList[currentLineNumber]);
+    console.log(machineCode);
+    if (!["JAL", "JALR"].includes(instructionsList[currentLineNumber][0])) {
+      setRegister("pc", binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, "100", zeroExtend));
+    } 
+    currentLineNumber = parseInt(
+      registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,
+      Base.BINARY,
+    ) / 4;
   }
 });
 
