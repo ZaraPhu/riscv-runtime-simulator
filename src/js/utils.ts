@@ -222,6 +222,161 @@ const INSTRUCTION_TO_FORMAT: ReadonlyMap<string, OperandType[]> = new Map([
   ["NOT", PSEUDO_TYPE_A], // Bitwise NOT
 ]);
 
+interface InstructionInfo {
+  instructionFormat: OperandType[],
+  executionFunction: Function,
+  decodeFunction: Function,
+  decodeInfo: InstructionDecodeInfo | undefined
+}
+
+const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
+  ["ADDI", {
+    instructionFormat: I_TYPE,
+    executionFunction: addi,
+    decodeFunction: addi_decode,
+    decodeInfo: { funct3: "000", funct7: undefined, opcode: "0010011" }
+  }],
+  ["MV", {
+    instructionFormat: PSEUDO_TYPE_A,
+    executionFunction: mv,
+    decodeFunction: mv_decode,
+    decodeInfo: { funct3: "000", funct7: undefined, opcode: "0010011" }
+  }],
+  ["NOP", {
+    instructionFormat: PSEUDO_TYPE_A,
+    executionFunction: nop,
+    decodeFunction: nop_decode,
+    decodeInfo: { funct3: "000", funct7: undefined, opcode: "0010011" }
+  }],
+  ["SLTI", {
+    instructionFormat: I_TYPE,
+    executionFunction: slti,
+    decodeFunction: slti_decode,
+    decodeInfo: { funct3: "010", funct7: undefined, opcode: "0010011" }
+  }],
+  ["SLTIU", {
+    instructionFormat: I_TYPE,
+    executionFunction: sltiu,
+    decodeFunction: slti_decode,
+    decodeInfo: { funct3: "011", funct7: undefined, opcode: "0010011" }
+  }],
+  ["SEQZ", {
+    instructionFormat: PSEUDO_TYPE_A,
+    executionFunction: seqz,
+    decodeFunction: seqz_decode,
+    decodeInfo: { funct3: "011", funct7: undefined, opcode: "0010011" }
+  }],
+  ["ANDI", {
+    instructionFormat: I_TYPE,
+    executionFunction: andi,
+    decodeFunction: addi_decode,
+    decodeInfo: { funct3: "111", funct7: undefined, opcode: "0010011" }
+  }],
+  ["ORI", {
+    instructionFormat: I_TYPE,
+    executionFunction: ori,
+    decodeFunction: ori_decode,
+    decodeInfo: { funct3: "110", funct7: undefined, opcode: "0010011" }
+  }],
+  ["XORI", {
+    instructionFormat: I_TYPE,
+    executionFunction: xori,
+    decodeFunction: xori_decode,
+    decodeInfo: { funct3: "100", funct7: undefined, opcode: "0010011" }
+  }],
+  ["SLLI", {
+    instructionFormat: I_TYPE,
+    executionFunction: slli,
+    decodeFunction: slli_decode,
+    decodeInfo: { funct3: "001", funct7: undefined, opcode: "0010011" }
+  }],
+  ["SRLI", {
+    instructionFormat: I_TYPE,
+    executionFunction: srli,
+    decodeFunction: srli_decode,
+    decodeInfo: { funct3: "101", funct7: undefined, opcode: "0010011" }
+  }],
+  ["SRAI", {
+    instructionFormat: I_TYPE,
+    executionFunction: srai,
+    decodeFunction: srai_decode,
+    decodeInfo: { funct3: "101", funct7: undefined, opcode: "0010011" }
+  }],
+  ["LUI", {
+    instructionFormat: U_TYPE,
+    executionFunction: lui,
+    decodeFunction: lui_decode,
+    decodeInfo: { funct3: undefined, funct7: undefined, opcode: "0110111" }
+  }],
+  ["AUIPC", {
+    instructionFormat: U_TYPE,
+    executionFunction: auipc,
+    decodeFunction: auipc_decode,
+    decodeInfo: { funct3: undefined, funct7: undefined, opcode: "0010111" }
+  }],
+  ["ADD", {
+    instructionFormat: R_TYPE,
+    executionFunction: add,
+    decodeFunction: add_decode,
+    decodeInfo: { funct3: "000", funct7: "0000000", opcode: "0110011" }
+  }],
+  ["SUB", {
+    instructionFormat: R_TYPE,
+    executionFunction: sub,
+    decodeFunction: sub_decode,
+    decodeInfo: { funct3: "000", funct7: "0100000", opcode: "0110011" }
+  }],
+  ["SLT", {
+    instructionFormat: R_TYPE,
+    executionFunction: slt,
+    decodeFunction: slt_decode,
+    decodeInfo: { funct3: "010", funct7: "0000000", opcode: "0110011" }
+  }],
+  ["SLTU", {
+    instructionFormat: R_TYPE,
+    executionFunction: sltu,
+    decodeFunction: sltu_decode,
+    decodeInfo: { funct3: "011", funct7: "0000000", opcode: "0110011" }
+  }],
+  // AND, OR, and XOR are missing implementations
+  ["SLL", {
+    instructionFormat: R_TYPE,
+    executionFunction: sll,
+    decodeFunction: sll_decode,
+    decodeInfo: { funct3: "001", funct7: "0000000", opcode: "0110011" }
+  }],
+  ["SRL", {
+    instructionFormat: R_TYPE,
+    executionFunction: srl,
+    decodeFunction: srl_decode,
+    decodeInfo: { funct3: "101", funct7: "0000000", opcode: "0110011" }
+  }],
+  ["SRA", {
+    instructionFormat: R_TYPE,
+    executionFunction: sra,
+    decodeFunction: sra_decode,
+    decodeInfo: { funct3: "101", funct7: "0100000", opcode: "0110011" }
+  }],
+  ["JAL", {
+    instructionFormat: J_TYPE,
+    executionFunction: jal,
+    decodeFunction: jal_decode,
+    decodeInfo: { funct3: undefined, funct7: undefined, opcode: "1101111" }
+  }],
+  ["J", {
+    instructionFormat: PSEUDO_TYPE_B,
+    executionFunction: j,
+    decodeFunction: j_decode,
+    decodeInfo: { funct3: undefined, funct7: undefined, opcode: "1101111" }
+  }],
+  ["JALR", {
+    instructionFormat: I_TYPE,
+    executionFunction: jalr,
+    decodeFunction: jalr_decode,
+    decodeInfo: { funct3: undefined, funct7: undefined, opcode: "1101111" }
+  }]
+]);
+
 const INSTRUCTION_TO_FUNCTION: ReadonlyMap<string, Function> = new Map([
   ["ADDI", addi],
   ["SLTI", slti],
@@ -542,7 +697,7 @@ function binarySub(
   return binaryAdd(op1, negOp2);
 }
 
-function addi(inputParams: InstructionInput): string {
+function addi(inputParams: InstructionInput): void {
   /**
    * Implements the ADDI instruction (Add Immediate).
    *
@@ -563,7 +718,12 @@ function addi(inputParams: InstructionInput): string {
   )!;
   const binarySum: string = binaryAdd(sourceValue, immBin);
   setRegister(inputParams.rd, binarySum);
+}
 
+function addi_decode(inputParams: InstructionInput): string {
+  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
+    -12,
+  );
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("ADDI")!;
   let machineCode: string = immBin;
@@ -582,7 +742,7 @@ function addi(inputParams: InstructionInput): string {
   return machineCode; // return machine code representation
 }
 
-function mv(inputParams: InstructionInput): string {
+function mv(inputParams: InstructionInput): void {
   /**
    * Implements the MV (Move) pseudo-instruction.
    *
@@ -596,17 +756,29 @@ function mv(inputParams: InstructionInput): string {
    * @returns The machine code representation of the instruction as a binary string
    */
   inputParams.imm = 0;
-  return addi(inputParams);
+  addi(inputParams);
 }
 
-function nop(inputParams: InstructionInput): string {
+function mv_decode(inputParams: InstructionInput): string {
+  inputParams.imm = 0;
+  return addi_decode(inputParams);
+}
+
+function nop(inputParams: InstructionInput): void {
   inputParams.rd = "x0";
   inputParams.rs1 = "x0";
   inputParams.imm = 0;
-  return addi(inputParams);
+  addi(inputParams);
 }
 
-function slti(inputParams: InstructionInput): string {
+function nop_decode(inputParams: InstructionInput): string {
+  inputParams.rd = "x0";
+  inputParams.rs1 = "x0";
+  inputParams.imm = 0;
+  return addi_decode(inputParams);
+}
+
+function slti(inputParams: InstructionInput): void {
   /**
    * Implements the SLTI instruction (Set Less Than Immediate).
    *
@@ -632,7 +804,12 @@ function slti(inputParams: InstructionInput): string {
       ? "1"
       : "0",
   );
+}
 
+function slti_decode(inputParams: InstructionInput): string {
+  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
+    -12,
+  );
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("SLTI")!;
   let machineCode: string = immBin;
@@ -651,7 +828,7 @@ function slti(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function sltiu(inputParams: InstructionInput): string {
+function sltiu(inputParams: InstructionInput): void {
   /**
    * Implements the SLTIU instruction (Set Less Than Immediate Unsigned).
    *
@@ -679,7 +856,12 @@ function sltiu(inputParams: InstructionInput): string {
       ? "1"
       : "0",
   );
+}
 
+function sltiu_decode(inputParams: InstructionInput): string {
+  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
+    -12,
+  );
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("SLTIU")!;
   let machineCode: string = immBin;
@@ -698,7 +880,7 @@ function sltiu(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function seqz(inputParams: InstructionInput): string {
+function seqz(inputParams: InstructionInput): void {
   /**
    * Implements the SEQZ (Set if Equal to Zero) pseudo-instruction.
    *
@@ -712,10 +894,15 @@ function seqz(inputParams: InstructionInput): string {
    * @returns The machine code representation of the instruction as a binary string
    */
   inputParams.imm = 1;
-  return sltiu(inputParams);
+  sltiu(inputParams);
 }
 
-function andi(inputParams: InstructionInput): string {
+function seqz_decode(inputParams: InstructionInput): string {
+  inputParams.imm = 1;
+  return sltiu_decode(inputParams);
+}
+
+function andi(inputParams: InstructionInput): void {
   /**
    * Implements the ANDI instruction (AND Immediate).
    *
@@ -740,7 +927,12 @@ function andi(inputParams: InstructionInput): string {
     result[i] = (immBinArr[i] === "1" && sourceBin[i]) === "1" ? "1" : "0";
   }
   setRegister(inputParams.rd, result.join(""));
+}
 
+function andi_decode(inputParams: InstructionInput): string {
+  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
+    -12,
+  );
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("ANDI")!;
   let machineCode: string = immBin;
@@ -759,7 +951,7 @@ function andi(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function ori(inputParams: InstructionInput): string {
+function ori(inputParams: InstructionInput): void {
   /**
    * Implements the ORI instruction (OR Immediate).
    *
@@ -784,7 +976,12 @@ function ori(inputParams: InstructionInput): string {
     result[i] = immBinArr[i] === "1" || sourceBin[i] === "1" ? "1" : "0";
   }
   setRegister(inputParams.rd, result.join(""));
+}
 
+function ori_decode(inputParams: InstructionInput): string {
+  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
+    -12,
+  );
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("ORI")!;
   let machineCode: string = immBin;
@@ -803,7 +1000,7 @@ function ori(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function xori(inputParams: InstructionInput): string {
+function xori(inputParams: InstructionInput): void {
   /**
    * Implements the XORI instruction (XOR Immediate).
    *
@@ -831,7 +1028,12 @@ function xori(inputParams: InstructionInput): string {
     result[i] = !(immBinArr[i] === sourceBin[i]) ? "1" : "0";
   }
   setRegister(inputParams.rd, result.join(""));
+}
 
+function xori_decode(inputParams: InstructionInput): string {
+  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
+    -12,
+  );
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("XORI")!;
   let machineCode: string = immBin;
@@ -850,7 +1052,7 @@ function xori(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function slli(inputParams: InstructionInput): string {
+function slli(inputParams: InstructionInput): void {
   /**
    * Implements the SLLI instruction (Shift Left Logical Immediate).
    *
@@ -871,7 +1073,10 @@ function slli(inputParams: InstructionInput): string {
   )!;
   const result: string = (sourceBin + zeroExtend("0", immVal)).slice(XLEN);
   setRegister(inputParams.rd, result);
+}
 
+function slli_decode(inputParams: InstructionInput): string {
+  const immBin: string = inputParams.imm.toString(Base.BINARY).slice(-5);
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("SLLI")!;
   let machineCode: string = zeroExtend(immBin, 12);
@@ -890,7 +1095,7 @@ function slli(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function srli(inputParams: InstructionInput): string {
+function srli(inputParams: InstructionInput): void {
   /**
    * Implements the SRLI instruction (Shift Right Logical Immediate).
    *
@@ -914,7 +1119,10 @@ function srli(inputParams: InstructionInput): string {
     XLEN,
   );
   setRegister(inputParams.rd, result);
+}
 
+function srli_decode(inputParams: InstructionInput): string {
+  const immBin: string = inputParams.imm.toString(Base.BINARY).slice(-5);
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("SRLI")!;
   let machineCode: string = zeroExtend(immBin, 12);
@@ -933,7 +1141,7 @@ function srli(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function srai(inputParams: InstructionInput): string {
+function srai(inputParams: InstructionInput): void {
   /**
    * Implements the SRAI instruction (Shift Right Arithmetic Immediate).
    *
@@ -960,7 +1168,10 @@ function srai(inputParams: InstructionInput): string {
     result = (zeroExtend("0", immVal) + sourceBin).substring(0, XLEN);
   }
   setRegister(inputParams.rd, result);
+}
 
+function srai_decode(inputParams: InstructionInput): string {
+  const immBin: string = inputParams.imm.toString(Base.BINARY).slice(-5);
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("SRAI")!;
   let machineCode: string = "01" + zeroExtend(immBin, 10);
@@ -979,7 +1190,7 @@ function srai(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function lui(inputParams: InstructionInput): string {
+function lui(inputParams: InstructionInput): void {
   /**
    * Implements the LUI instruction (Load Upper Immediate).
    *
@@ -995,7 +1206,12 @@ function lui(inputParams: InstructionInput): string {
     Number(inputParams.imm),
   ).slice(0, 20);
   setRegister(inputParams.rd, upperBits + zeroExtend("0", 12));
+}
 
+function lui_decode(inputParams: InstructionInput): string {
+  const upperBits: string = decimalToTwosComplement(
+    Number(inputParams.imm),
+  ).slice(0, 20);
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("LUI")!;
   let machineCode: string = upperBits;
@@ -1009,7 +1225,7 @@ function lui(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function auipc(inputParams: InstructionInput): string {
+function auipc(inputParams: InstructionInput): void {
   /**
    * Implements the AUIPC instruction (Add Upper Immediate to PC).
    *
@@ -1034,7 +1250,12 @@ function auipc(inputParams: InstructionInput): string {
     registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,
   );
   setRegister(inputParams.rd, result);
+}
 
+function auipc_decode(inputParams: InstructionInput): string {
+  const upperBits: string = decimalToTwosComplement(
+    Number(inputParams.imm),
+  ).slice(0, 20);
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("AUIPC")!;
   let machineCode = upperBits;
@@ -1048,7 +1269,7 @@ function auipc(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function add(inputParams: InstructionInput): string {
+function add(inputParams: InstructionInput): void {
   /**
    * Implements the ADD instruction (Add).
    *
@@ -1065,7 +1286,9 @@ function add(inputParams: InstructionInput): string {
     registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!,
   );
   setRegister(inputParams.rd, signExtend(sumValue));
+}
 
+function add_decode(inputParams: InstructionInput): string {
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("ADD")!;
   let machineCode = decodeInfo.funct7;
@@ -1092,7 +1315,7 @@ function add(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function sub(inputParams: InstructionInput): string {
+function sub(inputParams: InstructionInput): void {
   /**
    * Implements the SUB instruction (Subtract).
    *
@@ -1110,7 +1333,9 @@ function sub(inputParams: InstructionInput): string {
     registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!,
   );
   setRegister(inputParams.rd, signExtend(subValue));
+}
 
+function sub_decode(inputParams: InstructionInput): string {
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("SUB")!;
   let machineCode = decodeInfo.funct7;
@@ -1137,7 +1362,7 @@ function sub(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function slt(inputParams: InstructionInput): string {
+function slt(inputParams: InstructionInput): void {
   /**
    * Implements the SLT instruction (Set Less Than).
    *
@@ -1163,7 +1388,9 @@ function slt(inputParams: InstructionInput): string {
       ),
     ),
   );
+}
 
+function slt_decode(inputParams: InstructionInput): string {
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("SLT")!;
   let machineCode = decodeInfo.funct7;
@@ -1189,7 +1416,8 @@ function slt(inputParams: InstructionInput): string {
   machineCode = machineCode + decodeInfo.opcode;
   return machineCode;
 }
-function sltu(inputParams: InstructionInput): string {
+
+function sltu(inputParams: InstructionInput): void {
   /**
    * Implements the SLTU instruction (Set Less Than Unsigned).
    *
@@ -1215,7 +1443,9 @@ function sltu(inputParams: InstructionInput): string {
         ),
     ),
   );
+}
 
+function sltu_decode(inputParams: InstructionInput): string {
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("SLTU")!;
   let machineCode = decodeInfo.funct7;
@@ -1242,7 +1472,7 @@ function sltu(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function sll(inputParams: InstructionInput): string {
+function sll(inputParams: InstructionInput): void{
   const rs2Val: number = parseInt(
     registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.slice(-5),
     Base.BINARY,
@@ -1254,7 +1484,9 @@ function sll(inputParams: InstructionInput): string {
     inputParams.rd,
     (sourceBin + zeroExtend("0", rs2Val)).slice(-XLEN),
   );
+}
 
+function sll_decode(inputParams: InstructionInput): string {
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("SLL")!;
   let machineCode = decodeInfo.funct7;
@@ -1281,7 +1513,7 @@ function sll(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function srl(inputParams: InstructionInput): string {
+function srl(inputParams: InstructionInput): void {
   const rs2Val: number = parseInt(
     registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.slice(-5),
     Base.BINARY,
@@ -1293,7 +1525,9 @@ function srl(inputParams: InstructionInput): string {
     inputParams.rd,
     (zeroExtend("0", rs2Val) + sourceBin).substring(0, XLEN),
   );
+}
 
+function srl_decode(inputParams: InstructionInput): string {
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("SRL")!;
   let machineCode = decodeInfo.funct7;
@@ -1320,7 +1554,7 @@ function srl(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function sra(inputParams: InstructionInput): string {
+function sra(inputParams: InstructionInput): void {
   const rs2Val: number = parseInt(
     registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.slice(-5),
     Base.BINARY,
@@ -1339,7 +1573,9 @@ function sra(inputParams: InstructionInput): string {
       (zeroExtend("1", rs2Val) + sourceBin).substring(0, XLEN),
     );
   }
+}
 
+function sra_decode(inputParams: InstructionInput): string {
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("SRA")!;
   let machineCode = decodeInfo.funct7;
@@ -1366,7 +1602,7 @@ function sra(inputParams: InstructionInput): string {
   return machineCode;
 }
 
-function jal(inputParams: InstructionInput) {
+function jal(inputParams: InstructionInput): void {
   const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-20);
   setRegister(
     inputParams.rd,
@@ -1383,7 +1619,10 @@ function jal(inputParams: InstructionInput) {
       binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, immBin),
     );
   }
+}
 
+function jal_decode(inputParams: InstructionInput): string {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-20);
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("JAL")!;
   let machineCode: string =
@@ -1399,12 +1638,17 @@ function jal(inputParams: InstructionInput) {
   return machineCode;
 }
 
-function j(inputParams: InstructionInput) {
+function j(inputParams: InstructionInput): void {
   inputParams.rd = "x0";
-  return jal(inputParams);
+  jal(inputParams);
 }
 
-function not(inputParams: InstructionInput) {
+function j_decode(inputParams: InstructionInput): string {
+  inputParams.rd = "x0";
+  return jal_decode(inputParams);
+}
+
+function not(inputParams: InstructionInput): void {
   const bits: string[] = registers
     .get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
     .split("");
@@ -1412,11 +1656,13 @@ function not(inputParams: InstructionInput) {
     bits[i] = bits[i].localeCompare("1") == 0 ? "0" : "1";
   }
   setRegister(inputParams.rd, bits.join(""));
+}
 
+function not_decode(inputParams: InstructionInput): string {
   return "";
 }
 
-function jalr(inputParams: InstructionInput) {
+function jalr(inputParams: InstructionInput): void {
   const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
   const sourceRegisterVal: number = STRINGS_TO_REGISTERS.get(inputParams.rs1)!;
   const result: string[] = binaryAdd(
@@ -1436,7 +1682,11 @@ function jalr(inputParams: InstructionInput) {
       zeroExtend,
     ),
   );
+}
 
+function jalr_decode(inputParams: InstructionInput): string {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  const sourceRegisterVal: number = STRINGS_TO_REGISTERS.get(inputParams.rs1)!;
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_DECODE_INFO.get("JAL")!;
   let machineCode: string =
