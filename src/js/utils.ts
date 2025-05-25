@@ -710,51 +710,26 @@ function addi(inputParams: InstructionInput): void {
    * @param imm - The immediate value to add
    * @returns The machine code representation of the instruction as a binary string
    */
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
+  const binarySum: string = binaryAdd(
+    decimalToTwosComplement(Number(inputParams.imm)).slice(-12),
+    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
   );
-  const sourceValue: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
-  const binarySum: string = binaryAdd(sourceValue, immBin);
   setRegister(inputParams.rd, binarySum);
 }
 
 function addi_decode(inputParams: InstructionInput): string {
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("ADDI")!;
+  const machineCode: string = (
+    decimalToTwosComplement(Number(inputParams.imm)).slice(-12) // imm
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + instructionInfo.decodeInfo!.funct3! // funct3
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
+    + zeroExtend(instructionInfo.decodeInfo!.opcode!)  // opcode
   );
-  const decodeInfo: InstructionDecodeInfo =
-    INSTRUCTION_TO_DECODE_INFO.get("ADDI")!;
-  let machineCode: string = immBin;
-  const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(String(inputParams.rs1))!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + decodeInfo.funct3;
-  const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + destRegisterBin;
-  machineCode = machineCode + decodeInfo.opcode;
-  return machineCode; // return machine code representation
+  return machineCode; 
 }
 
 function mv(inputParams: InstructionInput): void {
-  /**
-   * Implements the MV (Move) pseudo-instruction.
-   *
-   * Copies the value from the source register to the destination register.
-   * This is implemented using the ADDI instruction with an immediate value of 0,
-   * which effectively adds 0 to the source register and stores the result in
-   * the destination register.
-   *
-   * @param rd - The destination register name where the value will be stored
-   * @param rs - The source register name containing the value to be copied
-   * @returns The machine code representation of the instruction as a binary string
-   */
   inputParams.imm = 0;
   addi(inputParams);
 }
@@ -779,120 +754,46 @@ function nop_decode(inputParams: InstructionInput): string {
 }
 
 function slti(inputParams: InstructionInput): void {
-  /**
-   * Implements the SLTI instruction (Set Less Than Immediate).
-   *
-   * Performs a signed comparison between the value in the source register
-   * and the sign-extended immediate value. If the register value is less than
-   * the immediate value, sets the destination register to 1, otherwise sets it to 0.
-   * This comparison treats both values as signed integers.
-   *
-   * @param rd - The destination register name where the result will be stored
-   * @param rs1 - The source register name containing the value to compare
-   * @param imm - The immediate value to compare against (sign-extended)
-   * @returns The machine code representation of the instruction as a binary string
-   */
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
+  const isLessThan: boolean = (
+    twosComplementToDecimal(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!)
+    < twosComplementToDecimal(decimalToTwosComplement(Number(inputParams.imm)).slice(-12))
   );
-  const sourceValue: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
-  setRegister(
-    inputParams.rd,
-    twosComplementToDecimal(sourceValue) < twosComplementToDecimal(immBin)
-      ? "1"
-      : "0",
-  );
+  setRegister(inputParams.rd, isLessThan ? "1": "0", zeroExtend);
 }
 
 function slti_decode(inputParams: InstructionInput): string {
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("SLTI")!;
+  const machineCode: string = (
+    decimalToTwosComplement(Number(inputParams.imm)).slice(-12) // imm
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + instructionInfo.decodeInfo!.funct3! // funct3
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
+    + zeroExtend(instructionInfo.decodeInfo!.opcode!)  // opcode
   );
-  const decodeInfo: InstructionDecodeInfo =
-    INSTRUCTION_TO_DECODE_INFO.get("SLTI")!;
-  let machineCode: string = immBin;
-  const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + decodeInfo.funct3;
-  const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + destRegisterBin;
-  machineCode = machineCode + decodeInfo.opcode;
-  return machineCode;
+  return machineCode; 
 }
 
 function sltiu(inputParams: InstructionInput): void {
-  /**
-   * Implements the SLTIU instruction (Set Less Than Immediate Unsigned).
-   *
-   * Performs an unsigned comparison between the value in the source register
-   * and the sign-extended immediate value. If the register value is less than
-   * the immediate value, sets the destination register to 1, otherwise sets it to 0.
-   * This comparison treats both values as unsigned integers.
-   *
-   * @param rd - The destination register name where the result will be stored
-   * @param rs1 - The source register name containing the value to compare
-   * @param imm - The immediate value to compare against (sign-extended)
-   * @returns The machine code representation of the instruction as a binary string
-   */
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
+  const isLessThanUnsigned: boolean = (
+    twosComplementToDecimal(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!)
+    < parseInt(decimalToTwosComplement(Number(inputParams.imm)).slice(-12), Base.BINARY)
   );
-  const sourceValue: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
-  // first sign extend imm to XLEN bits, then treat as unsigned number
-  setRegister(
-    inputParams.rd,
-    twosComplementToDecimal(sourceValue) <
-      parseInt(zeroExtend(immBin), Base.BINARY)
-      ? "1"
-      : "0",
-  );
+  setRegister(inputParams.rd, isLessThanUnsigned ? "1": "0", zeroExtend);
 }
 
 function sltiu_decode(inputParams: InstructionInput): string {
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("SLTIU")!;
+  const machineCode: string = (
+    decimalToTwosComplement(Number(inputParams.imm)).slice(-12) // imm
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + instructionInfo.decodeInfo!.funct3! // funct3
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
+    + zeroExtend(instructionInfo.decodeInfo!.opcode!)  // opcode
   );
-  const decodeInfo: InstructionDecodeInfo =
-    INSTRUCTION_TO_DECODE_INFO.get("SLTIU")!;
-  let machineCode: string = immBin;
-  const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + decodeInfo.funct3;
-  const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + destRegisterBin;
-  machineCode = machineCode + decodeInfo.opcode;
-  return machineCode;
+  return machineCode; 
 }
 
 function seqz(inputParams: InstructionInput): void {
-  /**
-   * Implements the SEQZ (Set if Equal to Zero) pseudo-instruction.
-   *
-   * Sets the destination register to 1 if the value in the source register
-   * is equal to zero, otherwise sets it to 0. This is implemented using
-   * the SLTIU instruction with an immediate value of 1, which effectively
-   * checks if the source register is less than 1 (i.e., equal to 0).
-   *
-   * @param rd - The destination register name where the result will be stored
-   * @param rs - The source register name containing the value to check
-   * @returns The machine code representation of the instruction as a binary string
-   */
   inputParams.imm = 1;
   sltiu(inputParams);
 }
@@ -903,269 +804,119 @@ function seqz_decode(inputParams: InstructionInput): string {
 }
 
 function andi(inputParams: InstructionInput): void {
-  /**
-   * Implements the ANDI instruction (AND Immediate).
-   *
-   * Performs a bitwise AND operation between the value in the source register
-   * and the sign-extended immediate value, storing the result in the destination register.
-   * The immediate value is sign-extended to XLEN bits before performing the AND operation.
-   *
-   * @param rd - The destination register name where the result will be stored
-   * @param rs1 - The source register name containing the first operand
-   * @param imm - The immediate value for the AND operation (sign-extended)
-   * @returns The machine code representation of the instruction as a binary string
-   */
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
-  );
-  const sourceBin: string[] = registers
-    .get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
-    .split("");
-  const immBinArr: string[] = signExtend(immBin).split("");
-  const result: string[] = [];
+  const immBits: string[] = decimalToTwosComplement(Number(inputParams.imm)).slice(-12).split("");
+  const sourceBits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
+  const resultBits: string[] = [];
   for (let i: number = 0; i < XLEN; i++) {
-    result[i] = (immBinArr[i] === "1" && sourceBin[i]) === "1" ? "1" : "0";
+    resultBits[i] = ((immBits[i] === "1") && (sourceBits[i] === "1")) ? "1" : "0";
   }
-  setRegister(inputParams.rd, result.join(""));
+  setRegister(inputParams.rd, resultBits.join(""));
 }
 
 function andi_decode(inputParams: InstructionInput): string {
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("ANDI")!;
+  const machineCode: string = (
+    decimalToTwosComplement(Number(inputParams.imm)).slice(-12) // imm
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + instructionInfo.decodeInfo!.funct3! // funct3
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
+    + zeroExtend(instructionInfo.decodeInfo!.opcode!)  // opcode
   );
-  const decodeInfo: InstructionDecodeInfo =
-    INSTRUCTION_TO_DECODE_INFO.get("ANDI")!;
-  let machineCode: string = immBin;
-  const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + decodeInfo.funct3;
-  const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + destRegisterBin;
-  machineCode = machineCode + decodeInfo.opcode;
-  return machineCode;
+  return machineCode; 
 }
 
 function ori(inputParams: InstructionInput): void {
-  /**
-   * Implements the ORI instruction (OR Immediate).
-   *
-   * Performs a bitwise OR operation between the value in the source register
-   * and the sign-extended immediate value, storing the result in the destination register.
-   * The immediate value is sign-extended to XLEN bits before performing the OR operation.
-   *
-   * @param rd - The destination register name where the result will be stored
-   * @param rs1 - The source register name containing the first operand
-   * @param imm - The immediate value for the OR operation (sign-extended)
-   * @returns The machine code representation of the instruction as a binary string
-   */
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
-  );
-  const sourceBin: string[] = registers
-    .get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
-    .split("");
-  const immBinArr: string[] = signExtend(immBin).split("");
-  const result: string[] = [];
+   const immBits: string[] = decimalToTwosComplement(Number(inputParams.imm)).slice(-12).split("");
+   const sourceBits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
+   const resultBits: string[] = [];
   for (let i: number = 0; i < XLEN; i++) {
-    result[i] = immBinArr[i] === "1" || sourceBin[i] === "1" ? "1" : "0";
+    resultBits[i] = ((immBits[i] === "1") || (sourceBits[i] === "1")) ? "1" : "0";
   }
-  setRegister(inputParams.rd, result.join(""));
+  setRegister(inputParams.rd, resultBits.join(""));
 }
 
 function ori_decode(inputParams: InstructionInput): string {
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("ORI")!;
+  const machineCode: string = (
+    decimalToTwosComplement(Number(inputParams.imm)).slice(-12) // imm
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + instructionInfo.decodeInfo!.funct3! // funct3
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
+    + zeroExtend(instructionInfo.decodeInfo!.opcode!)  // opcode
   );
-  const decodeInfo: InstructionDecodeInfo =
-    INSTRUCTION_TO_DECODE_INFO.get("ORI")!;
-  let machineCode: string = immBin;
-  const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + decodeInfo.funct3;
-  const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + destRegisterBin;
-  machineCode = machineCode + decodeInfo.opcode;
-  return machineCode;
+  return machineCode; 
 }
 
 function xori(inputParams: InstructionInput): void {
-  /**
-   * Implements the XORI instruction (XOR Immediate).
-   *
-   * Performs a bitwise XOR operation between the value in the source register
-   * and the sign-extended immediate value, storing the result in the destination register.
-   * The immediate value is sign-extended to XLEN bits before performing the XOR operation.
-   *
-   * @param rd - The destination register name where the result will be stored
-   * @param rs1 - The source register name containing the first operand
-   * @param imm - The immediate value for the XOR operation (sign-extended)
-   * @returns The machine code representation of the instruction as a binary string
-   */
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
-  );
-  const sourceBin: string[] = registers
-    .get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
-    .split("");
-  const immBinArr: string[] = decimalToTwosComplement(
-    inputParams.imm,
-    XLEN,
-  ).split("");
-  const result: string[] = [];
+  const immBits: string[] = decimalToTwosComplement(Number(inputParams.imm)).slice(-12).split("");
+  const sourceBits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
+  const resultBits: string[] = [];
   for (let i: number = 0; i < XLEN; i++) {
-    result[i] = !(immBinArr[i] === sourceBin[i]) ? "1" : "0";
+    resultBits[i] = !(immBits[i] === sourceBits[i]) ? "1" : "0";
   }
-  setRegister(inputParams.rd, result.join(""));
+  setRegister(inputParams.rd, resultBits.join(""));
 }
 
 function xori_decode(inputParams: InstructionInput): string {
-  const immBin: string = decimalToTwosComplement(Number(inputParams.imm)).slice(
-    -12,
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("XORI")!;
+  const machineCode: string = (
+    decimalToTwosComplement(Number(inputParams.imm)).slice(-12) // imm
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + instructionInfo.decodeInfo!.funct3! // funct3
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
+    + zeroExtend(instructionInfo.decodeInfo!.opcode!)  // opcode
   );
-  const decodeInfo: InstructionDecodeInfo =
-    INSTRUCTION_TO_DECODE_INFO.get("XORI")!;
-  let machineCode: string = immBin;
-  const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + decodeInfo.funct3;
-  const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + destRegisterBin;
-  machineCode = machineCode + decodeInfo.opcode;
-  return machineCode;
+  return machineCode; 
 }
 
 function slli(inputParams: InstructionInput): void {
-  /**
-   * Implements the SLLI instruction (Shift Left Logical Immediate).
-   *
-   * Performs a logical left shift on the value in the source register by the
-   * immediate value, and stores the result in the destination register.
-   * The shift amount is encoded in the lower 5 bits of the immediate value.
-   * Zeros are shifted in from the right side during the shift operation.
-   *
-   * @param rd - The destination register name where the result will be stored
-   * @param rs1 - The source register name containing the value to be shifted
-   * @param imm - The immediate value specifying the shift amount (0-31)
-   * @returns The machine code representation of the instruction as a binary string
-   */
-  const immBin: string = inputParams.imm.toString(Base.BINARY).slice(-5);
-  const immVal: number = parseInt(immBin);
-  const sourceBin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
-  const result: string = (sourceBin + zeroExtend("0", immVal)).slice(XLEN);
+  const result: string = (
+    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
+    + "0".repeat(parseInt(decimalToTwosComplement(Number(inputParams.imm)).slice(-5), Base.BINARY))
+  ).slice(-XLEN);
   setRegister(inputParams.rd, result);
 }
 
 function slli_decode(inputParams: InstructionInput): string {
-  const immBin: string = inputParams.imm.toString(Base.BINARY).slice(-5);
-  const decodeInfo: InstructionDecodeInfo =
-    INSTRUCTION_TO_DECODE_INFO.get("SLLI")!;
-  let machineCode: string = zeroExtend(immBin, 12);
-  const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
-    5,
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("SLLI")!;
+  const machineCode: string = (
+    decimalToTwosComplement(Number(inputParams.imm)).slice(-12) // imm
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + instructionInfo.decodeInfo!.funct3! // funct3
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
+    + zeroExtend(instructionInfo.decodeInfo!.opcode!)  // opcode
   );
-  machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + decodeInfo.funct3;
-  const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + destRegisterBin;
-  machineCode = machineCode + decodeInfo.opcode;
-  return machineCode;
+  return machineCode; 
 }
 
 function srli(inputParams: InstructionInput): void {
-  /**
-   * Implements the SRLI instruction (Shift Right Logical Immediate).
-   *
-   * Performs a logical right shift on the value in the source register by the
-   * immediate value, and stores the result in the destination register.
-   * The shift amount is encoded in the lower 5 bits of the immediate value.
-   * Zeros are shifted in from the left side during the shift operation.
-   *
-   * @param rd - The destination register name where the result will be stored
-   * @param rs1 - The source register name containing the value to be shifted
-   * @param imm - The immediate value specifying the shift amount (0-31)
-   * @returns The machine code representation of the instruction as a binary string
-   */
-  const immBin: string = inputParams.imm.toString(Base.BINARY).slice(-5);
-  const immVal: number = parseInt(immBin);
-  const sourceBin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
-  const result: string = (zeroExtend("0", immVal) + sourceBin).substring(
-    0,
-    XLEN,
-  );
+  const result: string = (
+    "0".repeat(parseInt(decimalToTwosComplement(inputParams.imm).slice(-5), Base.BINARY))
+    + registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
+    ).slice(0, XLEN);
   setRegister(inputParams.rd, result);
 }
 
 function srli_decode(inputParams: InstructionInput): string {
-  const immBin: string = inputParams.imm.toString(Base.BINARY).slice(-5);
-  const decodeInfo: InstructionDecodeInfo =
-    INSTRUCTION_TO_DECODE_INFO.get("SRLI")!;
-  let machineCode: string = zeroExtend(immBin, 12);
-  const sourceRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY),
-    5,
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("SRLI")!;
+  const machineCode: string = (
+    decimalToTwosComplement(Number(inputParams.imm)).slice(-12) // imm
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + instructionInfo.decodeInfo!.funct3! // funct3
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
+    + zeroExtend(instructionInfo.decodeInfo!.opcode!)  // opcode
   );
-  machineCode = machineCode + sourceRegisterBin;
-  machineCode = machineCode + decodeInfo.funct3;
-  const destRegisterBin: string = zeroExtend(
-    STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
-    5,
-  );
-  machineCode = machineCode + destRegisterBin;
-  machineCode = machineCode + decodeInfo.opcode;
-  return machineCode;
+  return machineCode; 
 }
 
 function srai(inputParams: InstructionInput): void {
-  /**
-   * Implements the SRAI instruction (Shift Right Arithmetic Immediate).
-   *
-   * Performs an arithmetic right shift on the value in the source register by the
-   * immediate value, and stores the result in the destination register.
-   * The shift amount is encoded in the lower 5 bits of the immediate value.
-   * In arithmetic right shifts, the sign bit (most significant bit) is preserved
-   * and copied into the positions vacated by the shift operation.
-   *
-   * @param rd - The destination register name where the result will be stored
-   * @param rs1 - The source register name containing the value to be shifted
-   * @param imm - The immediate value specifying the shift amount (0-31)
-   * @returns The machine code representation of the instruction as a binary string
-   */
-  const immBin: string = inputParams.imm.toString(Base.BINARY).slice(-5);
-  const immVal: number = parseInt(immBin, Base.BINARY);
-  const sourceBin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
+  const immVal: number = parseInt(inputParams.imm.toString(Base.BINARY).slice(-5), Base.BINARY);
+  const sourceBits: string = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!;
   let result: string = "";
-  if (sourceBin[0].localeCompare("0")) {
-    result = (signExtend("1", immVal) + sourceBin).substring(0, XLEN);
+  if (sourceBits[0].localeCompare("0")) {
+    result = ("1".repeat(immVal) + sourceBits).slice(0, XLEN);
   } else {
-    result = (zeroExtend("0", immVal) + sourceBin).substring(0, XLEN);
+    result = ("0".repeat(immVal) + sourceBits).slice(0, XLEN);
   }
   setRegister(inputParams.rd, result);
 }
@@ -1484,6 +1235,75 @@ function sll(inputParams: InstructionInput): void{
     inputParams.rd,
     (sourceBin + zeroExtend("0", rs2Val)).slice(-XLEN),
   );
+}
+
+function and(inputParams: InstructionInput): void {
+  const source1Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
+  const source2Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.split("");
+  const resultBits: string[] = [];
+  for (let i = 0; i < XLEN; i++) { 
+    resultBits[i] = ((source1Bits[i] == "1") && (source2Bits[i] == "1")) ? "1" : "0";
+  }
+  setRegister(inputParams.rd, resultBits.join(""));
+}
+
+function and_decode(inputParams: InstructionInput): string {
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("AND")!;
+  let machineCode: string = (
+    instructionInfo.decodeInfo!.funct7!
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5)
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY), 5)
+    + instructionInfo.decodeInfo!.funct3!
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5)
+    + instructionInfo.decodeInfo!.opcode!
+  );
+  return machineCode;
+}
+
+function or(inputParams: InstructionInput): void { 
+  const source1Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
+  const source2Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.split("");
+  const resultBits: string[] = [];
+  for (let i = 0; i < XLEN; i++) {
+    resultBits[i] = ((source1Bits[i] === "1") || (source2Bits[i] === "1")) ? "1" : "0";
+  }
+  setRegister(inputParams.rd, resultBits.join(""));
+}
+
+function or_decode(inputParams: InstructionInput): string {
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("OR")!;
+  let machineCode: string = (
+    instructionInfo.decodeInfo!.funct7!
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5)
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY), 5)
+    + instructionInfo.decodeInfo!.funct3!
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5)
+    + instructionInfo.decodeInfo!.opcode!
+  );
+  return machineCode;
+}
+
+function xor(inputParams: InstructionInput): void { 
+  const source1Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
+  const source2Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.split("");
+  const resultBits: string[] = [];
+  for (let i = 0; i < XLEN; i++) {
+    resultBits[i] = !(source1Bits[i] === source2Bits[i]) ? "1": "0";
+  }
+  setRegister(inputParams.rd, resultBits.join(""));
+}
+
+function xor_decode(inputParams: InstructionInput): string {
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("XOR")!;
+  let machineCode: string = (
+    instructionInfo.decodeInfo!.funct7!
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5)
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY), 5)
+    + instructionInfo.decodeInfo!.funct3!
+    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5)
+    + instructionInfo.decodeInfo!.opcode!
+  );
+  return machineCode;
 }
 
 function sll_decode(inputParams: InstructionInput): string {

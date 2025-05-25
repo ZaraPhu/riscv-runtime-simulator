@@ -89,18 +89,16 @@ function parseInput(instructionList: string[]): ParserResult {
       continue;
     }
 
-    // Look up the expected format for this instruction using its opcode
-    const format: OperandType[] | undefined = INSTRUCTION_TO_FORMAT.get(
-      destructuredInstruction[0],
-    );
-    // If the opcode isn't recognized, mark as error
-    if (format == undefined) {
+    const instructionInfo: InstructionInfo | undefined = INSTRUCTION_TO_INFO.get(destructuredInstruction[0]);
+
+    if (instructionInfo == undefined) {
       appendParsingError(
         parsingResult,
         `Line ${i + 1}: Instruction ${destructuredInstruction[0]} was not recognized.\n`,
       );
       continue;
     }
+    const format: OperandType[] = instructionInfo.instructionFormat;
 
     // Extract just the operands (everything after the opcode)
     const operands: string[] = destructuredInstruction.slice(1);
@@ -160,110 +158,48 @@ function parseInput(instructionList: string[]): ParserResult {
   return parsingResult;
 }
 
-function executeInstruction(destructuredInstruction: string[]): string {
-  /**
-   * Executes a RISC-V instruction based on its type.
-   *
-   * This function takes a destructured instruction array (opcode and operands),
-   * determines its type (I-type, R-type, U-type, or no-operand type), and executes
-   * the appropriate function handler for that instruction. Each instruction type
-   * has different parameter requirements which are passed to the corresponding
-   * function from their respective maps.
-   *
-   * @param destructuredInstruction - Array containing the opcode and operands
-   * @returns true if execution was successful (currently always returns true)
-   */
-  // Get the instruction format type based on the opcode (first element)
-  const instructionType: OperandType[] | undefined = INSTRUCTION_TO_FORMAT.get(
-    destructuredInstruction[0],
-  );
-  // Validate instruction type is not undefined
-  if (!instructionType) {
-    raiseError(
-      `Invalid instruction type for opcode ${destructuredInstruction[0]}`,
-    );
-    return "";
-  }
-
-  // Initialize status
-  let machineCode: string = "";
-  const instructionFunc: Function = INSTRUCTION_TO_FUNCTION.get(
-    destructuredInstruction[0],
-  )!;
-
-  // Execute the appropriate function based on instruction type
-  switch (instructionType) {
-    // I-type instructions (e.g., addi, lw) - typically use immediate values
+function fillInputParams(instructionFormat: OperandType[], destructuredInstruction: string[]): InstructionInput {
+  const inputParams: InstructionInput = { rd: "", rs1: "", rs2: "", imm: 0 };
+  switch (instructionFormat) {
     case I_TYPE:
-      const iTypeInputs: InstructionInput = {
-        rd: destructuredInstruction[1],
-        rs1: destructuredInstruction[2],
-        rs2: "",
-        imm: Number(destructuredInstruction[3]),
-      };
-      machineCode = instructionFunc(iTypeInputs);
+      [inputParams.rd, inputParams.rs1] = destructuredInstruction.slice(1, 3);
+      inputParams.imm = Number(destructuredInstruction[3]);
       break;
-
-    // R-type instructions (e.g., add, sub) - register-register operations
     case R_TYPE:
-      const rTypeInputs: InstructionInput = {
-        rd: destructuredInstruction[1],
-        rs1: destructuredInstruction[2],
-        rs2: destructuredInstruction[3],
-        imm: 0,
-      };
-      machineCode = instructionFunc(rTypeInputs);
+      [inputParams.rd, inputParams.rs1, inputParams.rs2] = destructuredInstruction.slice(1);
       break;
-
-    // U-type instructions (e.g., lui) - upper immediate operations
     case U_TYPE:
-      const uTypeInputs: InstructionInput = {
-        rd: destructuredInstruction[1],
-        rs1: "",
-        rs2: "",
-        imm: Number(destructuredInstruction[2]),
-      };
-      machineCode = instructionFunc(uTypeInputs);
+      inputParams.rd = destructuredInstruction[1];
+      inputParams.imm = Number(destructuredInstruction[2]);
       break;
-
-    // Instructions with no operands
-    case NONE_TYPE:
-      machineCode = instructionFunc({});
-      break;
-
     case PSEUDO_TYPE_A:
-      const p1TypeInputs: InstructionInput = {
-        rd: destructuredInstruction[1],
-        rs1: destructuredInstruction[2],
-        rs2: "",
-        imm: Number(destructuredInstruction[3]),
-      };
-      machineCode = instructionFunc(p1TypeInputs);
+      [inputParams.rd, inputParams.rs1] = destructuredInstruction.slice(1, 3);
+      inputParams.imm = Number(destructuredInstruction[3]);
       break;
-    // Handle unexpected instruction types
     case PSEUDO_TYPE_B:
-      const p2TypeInputes: InstructionInput = {
-        rd: "",
-        rs1: "",
-        rs2: "",
-        imm: Number(destructuredInstruction[1]),
-      };
-      machineCode = instructionFunc(p2TypeInputes);
+      inputParams.imm = Number(destructuredInstruction[1]);
       break;
     case J_TYPE:
-      const jTypeInputs: InstructionInput = {
-        rd: destructuredInstruction[1],
-        rs1: "",
-        rs2: "",
-        imm: Number(destructuredInstruction[2]),
-      };
-      machineCode = instructionFunc(jTypeInputs);
+      inputParams.rd = destructuredInstruction[1];
+      inputParams.imm = Number(destructuredInstruction[2]);
       break;
     default:
       console.log("Got an invalid instruction type.");
       break;
   }
-  return machineCode;
+  return inputParams;
+}
+
+function executeInstruction(destructuredInstruction: string[], decode: boolean = false): string {
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get(destructuredInstruction[0])!;
+  const instructionFormat: OperandType[] = instructionInfo.instructionFormat;
+  const inputParams: InstructionInput = fillInputParams(instructionFormat, destructuredInstruction);
+  if (decode) {
+    return instructionInfo.decodeFunction(inputParams);
+  } else {
+    instructionInfo.executionFunction(inputParams);
+    return "";
+  }
 }
 
 /*** Program Starting Point ***/
@@ -309,21 +245,28 @@ assembleButton?.addEventListener("click", () => {
     instructionsList = parsingResult.output;
     currentLineNumber = 0;
   }
+
+  for (let i = 0; i < instructionsList.length; i++) {
+    console.log(executeInstruction(instructionsList[i], true));
+  }
 });
 
 stepButton?.addEventListener("click", () => {
   if (instructionsList.length == 0) {
     raiseError("Instructions have not yet been assembled.");
   } else {
-    let machineCode: string = executeInstruction(instructionsList[currentLineNumber]);
-    console.log(machineCode);
-    if (!["JAL", "JALR"].includes(instructionsList[currentLineNumber][0])) {
-      setRegister("pc", binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, "100", zeroExtend));
-    } 
-    currentLineNumber = parseInt(
-      registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,
-      Base.BINARY,
-    ) / 4;
+    if (instructionsList[currentLineNumber]) {
+      executeInstruction(instructionsList[currentLineNumber]);
+      if (!["JAL", "JALR"].includes(instructionsList[currentLineNumber][0])) {
+        setRegister("pc", binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, "100", zeroExtend));
+      }
+      currentLineNumber = parseInt(
+        registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,
+        Base.BINARY,
+      ) / 4;
+    } else { 
+      console.log("Program completed execution.");
+    }
   }
 });
 
