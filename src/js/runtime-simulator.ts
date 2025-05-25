@@ -247,7 +247,8 @@ assembleButton?.addEventListener("click", () => {
   }
 
   for (let i = 0; i < instructionsList.length; i++) {
-    console.log(executeInstruction(instructionsList[i], true));
+    memory.set(i, executeInstruction(instructionsList[i], true));
+    
   }
 });
 

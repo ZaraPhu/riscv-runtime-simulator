@@ -31,7 +31,13 @@ Creation Date: April 1, 2025.
                 <button id="toggle-dark-mode" class="btn btn-primary mx-2">
                     Toggle Dark Mode
                 </button>
-                <a class="btn btn-primary mx-2" target="_blank" href="https://github.com/ZaraPhu/riscv-runtime-simulator" role="button">Help</a>
+                <a
+                    class="btn btn-primary mx-2"
+                    target="_blank"
+                    href="https://github.com/ZaraPhu/riscv-runtime-simulator"
+                    role="button"
+                    >Help</a
+                >
             </nav>
         </header>
         <main
@@ -42,11 +48,11 @@ Creation Date: April 1, 2025.
                 <div class="d-flex flex-row justify-content-between">
                     <div class="form-check form-check-inline">
                         <input
-                        class="form-check-input"
-                        type="radio"
-                        name="representationCheck"
-                        id="binary-check"
-                        checked
+                            class="form-check-input"
+                            type="radio"
+                            name="representationCheck"
+                            id="binary-check"
+                            checked
                         />
                         <label class="form-check-label" for="binary-check">
                             Binary
@@ -54,10 +60,10 @@ Creation Date: April 1, 2025.
                     </div>
                     <div class="form-check form-check-inline">
                         <input
-                        class="form-check-input"
-                        type="radio"
-                        name="representationCheck"
-                        id="octal-check"
+                            class="form-check-input"
+                            type="radio"
+                            name="representationCheck"
+                            id="octal-check"
                         />
                         <label class="form-check-label" for="octal-check">
                             Octal
@@ -65,10 +71,10 @@ Creation Date: April 1, 2025.
                     </div>
                     <div class="form-check form-check-inline">
                         <input
-                        class="form-check-input"
-                        type="radio"
-                        name="representationCheck"
-                        id="decimal-check"
+                            class="form-check-input"
+                            type="radio"
+                            name="representationCheck"
+                            id="decimal-check"
                         />
                         <label class="form-check-label" for="decimal-check">
                             Decimal
@@ -76,17 +82,20 @@ Creation Date: April 1, 2025.
                     </div>
                     <div class="form-check form-check-inline">
                         <input
-                        class="form-check-input"
-                        type="radio"
-                        name="representationCheck"
-                        id="hexadecimal-check"
+                            class="form-check-input"
+                            type="radio"
+                            name="representationCheck"
+                            id="hexadecimal-check"
                         />
                         <label class="form-check-label" for="hexadecimal-check">
                             Hexadecimal
                         </label>
                     </div>
                 </div>
-                <button id="reset-registers-btn" class="btn btn-primary my-3 mx-auto">
+                <button
+                    id="reset-registers-btn"
+                    class="btn btn-primary my-3 mx-auto"
+                >
                     Reset Registers
                 </button>
                 <ul
@@ -108,12 +117,13 @@ Creation Date: April 1, 2025.
                 <button id="assemble-button" class="btn btn-primary my-3">
                     Assemble
                 </button>
-                <button id="step-button" class="btn btn-primary">
-                    Step
-                </button>
+                <button id="step-button" class="btn btn-primary">Step</button>
                 <p id="error-text"></p>
             </div>
-            <div id="memory-grid" class="container text-center overflow-auto p-3">
+            <div
+                id="memory-grid"
+                class="container text-center overflow-auto p-3"
+            >
                 <h2>Memory Peeker</h2>
             </div>
         </main>
