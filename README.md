@@ -37,6 +37,7 @@ A number of instructions from RISC-V have already been implemented in this runti
 - AUIPC rd, imm ()
 - ADD rd, rs1, rs2 (add the values stored in register "rs1" and "rs2", and store the result in register "rd")
 - SUB rd, rs1, rs2 (subtract the value in register "rs1" from the value in "rs2" and store the result in register "rd")
+- 
 
 Legend:
 - rd - destination register
@@ -44,7 +45,10 @@ Legend:
 - imm - immediate value (a number)
 
 ### The Memory Peeker
-Currently, the Memory Peeker has not been implemented. When it is ready, this component will display the binary (machine code) representation of the instructions.
+The Memory Peeker is on the right hand side of the screen. In the context of this runtime simulator, the "memory" refers to where the program instructions and programd data are stored (in binary form). 
+
+Notice that when you press the "Assemble" button, this runtime simulator will erase the current memory cell values, convert the instructions you wrote in the assembly editor into 32-bit numbers, and store those numbers inside the memory cells in order. 
+
 
 ## An Example Program
 Consider the following program
@@ -53,10 +57,15 @@ ADDI x1, x0, 5
 ADDI x2, x0, 3
 SUB x3, x1, x2
 ```
-Here is what this program does line by line:
-1. Move the value of 5 (same as 5 + 0, since x0 is always 0) into register x1
-2. Move the value of 3 into register x2
-3. Store the result of 5 - 3 (x1 - x2) in register x3
+(You can copy and paste this straight into the "Assembly Editor" to follow along.)
+
+First, you press the "Assemble" button. You'll notice that the numbers inside the memory peeker (on the right hand side of the screen) may have changed. For example, in memory cell 1, you'll see the number "00000000010100000000000010010011". This is a binary representation of the first instruction "ADDI x1, x0, 5". The following numbers below this are the rest of the instructions in their binary representation.
+
+In a real computer, the assembly that you would write is turned into these numbers stored in the memory peeker. A computer doesn't directly understand the significance of the "ADDI x1, x0, 5" instruction, but it can deal with numbers!
+
+Next, press the "Step" button. Notice that on the left hand side of the screen, there was a change in the numbers being stored in the registers. In register x1, you'll see the "0b00000000000000000000000000000101" next to it. This is just a binary representation of the number 5. When you press the "Step" button, the simulator carries out the instructions step-by-step.
+
+The first instruction "ADDI x1, x0, 5" adds the number in register x0 (which is always 0 no matter what) to the number 5, and stores that result in register x1. The second instruction loads 3 into register x2. The final instruction performs subtract between the numbers in x2 and x1 (5 - 3, in this case), and stores that result inside register x3.
 
 ## Appendix A: The RISC-V ISA
 This runtime simulator will be trying to match the latest ratified specification for the [RISC-V ISA](https://lf-riscv.atlassian.net/wiki/spaces/HOME/pages/16154769/RISC-V+Technical+Specifications). Specifically, this project implements the fully ratified R32I (Base Integer) ISA.

@@ -3,6 +3,10 @@ body {
     min-width: 400px;
 }
 
+ul#register-list {
+    max-height: 90vh;
+}
+
 textarea#assembly-editor {
     min-width: 20vw;
     min-height: 50vh;

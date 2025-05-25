@@ -137,7 +137,7 @@ function fillMemoryGrid(currentMemory: Map<number, string>): void {
   currentMemory.forEach((instruction: string, i: number) => {
     const memoryCell = document.createElement("li");
     memoryCell.classList.add("list-group-item");
-    memoryCell.textContent = `${i}: ${instruction}`;
+    memoryCell.textContent = `${i+1}: ${instruction}`;
     memoryGrid.appendChild(memoryCell);
   });
 }
