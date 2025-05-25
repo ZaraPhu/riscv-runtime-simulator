@@ -8,6 +8,6 @@ textarea#assembly-editor {
     min-height: 50vh;
 }
 
-div#memory-grid {
+div#memory-peeker {
     max-height: 90vh;
 }

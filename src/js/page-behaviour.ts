@@ -33,9 +33,9 @@ const octalCheck: HTMLInputElement = document.querySelector(
 ) as HTMLInputElement;
 
 // for the memory peeker
-const memoryGrid: HTMLDivElement = document.querySelector(
+const memoryGrid: HTMLUListElement = document.querySelector(
   "#memory-grid",
-) as HTMLDivElement;
+) as HTMLUListElement;
 
 /*** Functions ***/
 function createRegister(index: number): HTMLLIElement {
@@ -132,6 +132,16 @@ function populateMemoryGrid(rows: number, columns: number) {
   }
 }
 
+function fillMemoryGrid(currentMemory: Map<number, string>): void {
+  memoryGrid.innerHTML = "";
+  currentMemory.forEach((instruction: string, i: number) => {
+    const memoryCell = document.createElement("li");
+    memoryCell.classList.add("list-group-item");
+    memoryCell.textContent = `${i}: ${instruction}`;
+    memoryGrid.appendChild(memoryCell);
+  });
+}
+
 /*** Program Starting Point */
 // sets up the dark mode toggle button
 darkModeButton?.addEventListener("click", () => {
@@ -147,7 +157,7 @@ darkModeButton?.addEventListener("click", () => {
 populateRegisterList();
 
 // set up memory grid
-populateMemoryGrid(100, 10);
+fillMemoryGrid(memory);
 
 const registerDisplays: HTMLParagraphElement[] = [];
 for (let i = 0; i < XLEN; i++) {

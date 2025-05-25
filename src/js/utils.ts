@@ -626,23 +626,11 @@ function iTypeDecode(inputParams: InstructionInput, instructionName: string): st
     + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
     + decodeInfo.funct3! // funct3
     + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
-    + zeroExtend(decodeInfo.opcode!)  // opcode
+    + decodeInfo.opcode!  // opcode
   );
 }
 
 function addi(inputParams: InstructionInput): void {
-  /**
-   * Implements the ADDI instruction (Add Immediate).
-   *
-   * Adds a 12-bit signed immediate value to the value in the source register,
-   * and stores the result in the destination register.
-   * The function also generates the machine code representation of the instruction.
-   *
-   * @param rd - The destination register name (e.g., "x1", "t0")
-   * @param rs - The source register name containing the base value
-   * @param imm - The immediate value to add
-   * @returns The machine code representation of the instruction as a binary string
-   */
   const binarySum: string = binaryAdd(
     decimalToTwosComplement(Number(inputParams.imm)).slice(-12),
     registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!

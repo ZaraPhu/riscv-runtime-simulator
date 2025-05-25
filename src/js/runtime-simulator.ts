@@ -248,8 +248,8 @@ assembleButton?.addEventListener("click", () => {
 
   for (let i = 0; i < instructionsList.length; i++) {
     memory.set(i, executeInstruction(instructionsList[i], true));
-    
   }
+  fillMemoryGrid(memory);
 });
 
 stepButton?.addEventListener("click", () => {
