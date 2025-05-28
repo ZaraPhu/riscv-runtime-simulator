@@ -64,6 +64,7 @@ const R_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER, Opera
 const NONE_TYPE: OperandType[] = [];
 const PSEUDO_TYPE_A: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER];
 const PSEUDO_TYPE_B: OperandType[] = [OperandType.IMMEDIATE];
+const PSEUDO_TYPE_C = U_TYPE;
 const J_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.IMMEDIATE];
 const B_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER, OperandType.IMMEDIATE];
 
@@ -215,6 +216,12 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
     decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "XORI"); },
     decodeInfo: { funct3: "100", funct7: undefined, opcode: "0010011" }
   }],
+  ["NOT", {
+    instructionFormat: PSEUDO_TYPE_A,
+    executionFunction: not,
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "NOT")},
+    decodeInfo: { funct3: "100", funct7: undefined, opcode: "0010011" }
+  }],
   ["SLLI", {
     instructionFormat: I_TYPE,
     executionFunction: slli,
@@ -329,16 +336,40 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
     decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BEQ"); },
     decodeInfo: { funct3: "000", funct7: undefined, opcode: "1100011" }
   }],
+  ["BEQZ", {
+    instructionFormat: PSEUDO_TYPE_C,
+    executionFunction: beqz,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BEQZ"); },
+    decodeInfo: { funct3: "000", funct7: undefined, opcode: "1100011" }
+  }],
   ["BNE", {
     instructionFormat: B_TYPE,
     executionFunction: bne,
     decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BNE"); },
     decodeInfo: { funct3: "001", funct7: undefined, opcode: "1100011" }
   }],
+  ["BNEZ", {
+    instructionFormat: PSEUDO_TYPE_C,
+    executionFunction: bnez,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BNEZ"); },
+    decodeInfo: { funct3: "001", funct7: undefined, opcode: "1100011" }
+  }],
   ["BLT", {
     instructionFormat: B_TYPE,
     executionFunction: blt,
     decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BLT"); },
+    decodeInfo: { funct3: "100", funct7: undefined, opcode: "1100011" }
+  }],
+  ["BLTZ", {
+    instructionFormat: PSEUDO_TYPE_C,
+    executionFunction: bltz,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BLTZ"); },
+    decodeInfo: { funct3: "100", funct7: undefined, opcode: "1100011" }
+  }],
+  ["BGTZ", {
+    instructionFOrmat: PSEUDO_TYPE_C,
+    executionFunction: bgtz,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BGTZ"); },
     decodeInfo: { funct3: "100", funct7: undefined, opcode: "1100011" }
   }],
   ["BLTU", {
@@ -353,6 +384,18 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
     decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BGE"); },
     decodeInfo: { funct3: "110", funct7: undefined, opcode: "1100011" }
   }], 
+  ["BLEZ", {
+    instructionFormat: PSEUDO_TYPE_C,
+    executionFunction: blez,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BLEZ"); },
+    decodeInfo: { funct3: "110", funct7: undefined, opcode: "1100011" }
+  }],
+  ["BGEZ", {
+    instructionFormat: PSEUDO_TYPE_C,
+    executionFunction: bgez,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BGEZ"); },
+    decodeInfo: { funct3: "110", funct7: undefined, opcode: "1100011" }
+  }],
   ["BGEU", {
     instructionFormat: B_TYPE,
     executionFunction: bgeu,
@@ -678,13 +721,18 @@ function ori(inputParams: InstructionInput): void {
 }
 
 function xori(inputParams: InstructionInput): void {
-  const immBits: string[] = decimalToTwosComplement(Number(inputParams.imm)).slice(-12).split("");
+  const immBits: string[] = decimalToTwosComplement(inputParams.imm, 12).split("");
   const sourceBits: string[] = getValueInRegister(inputParams.rs1)!.split("");
   const resultBits: string[] = [];
   for (let i: number = 0; i < XLEN; i++) {
     resultBits[i] = !(immBits[i] === sourceBits[i]) ? "1" : "0";
   }
   setRegister(inputParams.rd, resultBits.join(""));
+}
+
+function not(inputParams: InstructionInput): void {
+  inputParams.imm = -1;
+  xori(inputParams);
 }
 
 function slli(inputParams: InstructionInput): void {
@@ -935,13 +983,6 @@ function j_decode(inputParams: InstructionInput): string {
   return jal_decode(inputParams);
 }
 
-function not(inputParams: InstructionInput): void {
-  const sourceBits: string[] = getValueInRegister(inputParams.rs1)!.split("");
-  for (let i = 0; i < sourceBits.length; i++) {
-    sourceBits[i] = (sourceBits[i].localeCompare("1") == 0) ? "0" : "1";
-  }
-  setRegister(inputParams.rd, sourceBits.join(""));
-}
 
 function jalr(inputParams: InstructionInput): void {
   const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
@@ -995,6 +1036,11 @@ function beq(inputParams: InstructionInput): void {
   }
 }
 
+function beqz(inputParams: InstructionInput): void { 
+  inputParams.rs2 = "x0";
+  beq(inputParams);
+}
+
 function bne(inputParams: InstructionInput): void {
   const immBin: string = decimalToTwosComplement(inputParams.imm, 12);
   if (
@@ -1009,6 +1055,11 @@ function bne(inputParams: InstructionInput): void {
       )
     );
   }
+}
+
+function bnez(inputParams: InstructionInput): void {
+  inputParams.rs2 = "x0";
+  bne(inputParams);
 }
 
 function blt(inputParams: InstructionInput): void {
@@ -1027,6 +1078,17 @@ function blt(inputParams: InstructionInput): void {
   }
 }
 
+function bltz(inputParams: InstructionInput): void {
+  inputParams.rs2 = "x0";
+  blt(inputParams);
+}
+
+function bgtz(inputParams: InstructionInput): void { 
+  inputParams.rs2 = inputParams.rs1;
+  inputParams.rs1 = "x0";
+  blt(inputParams);
+}
+
 function bltu(inputParams: InstructionInput): void {
   const immBin: string = decimalToTwosComplement(inputParams.imm, 12);
   if (
@@ -1043,6 +1105,7 @@ function bltu(inputParams: InstructionInput): void {
   }
 }
 
+
 function bge(inputParams: InstructionInput): void {
   const immBin: string = decimalToTwosComplement(inputParams.imm, 12);
   if (
@@ -1057,6 +1120,17 @@ function bge(inputParams: InstructionInput): void {
       )
     );
   }
+}
+
+function blez(inputParams: InstructionInput): void {
+  inputParams.rs2 = inputParams.rs1;
+  inputParams.rs1 = "x0";
+  bge(inputParams);
+}
+
+function bgez(inputParams: InstructionInput): void { 
+  inputParams.rs2 = "x0";
+  bge(inputParams);
 }
 
 function bgeu(inputParams: InstructionInput): void {
