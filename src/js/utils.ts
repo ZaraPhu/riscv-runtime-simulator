@@ -219,7 +219,7 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
   ["NOT", {
     instructionFormat: PSEUDO_TYPE_A,
     executionFunction: not,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "NOT")},
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "NOT") },
     decodeInfo: { funct3: "100", funct7: undefined, opcode: "0010011" }
   }],
   ["SLLI", {
@@ -270,10 +270,28 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
     decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SLT"); },
     decodeInfo: { funct3: "010", funct7: "0000000", opcode: "0110011" }
   }],
+  ["SLTZ", {
+    instructionFormat: PSEUDO_TYPE_A,
+    executionFunction: sltz,
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SLTZ"); },
+    decodeInfo: { funct3: "010", funct7: "0000000", opcode: "0110011" }
+  }],
+  ["SGTZ", {
+    instructionFormat: PSEUDO_TYPE_A,
+    executionFunction: sgtz,
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SGTZ"); },
+    decodeInfo: { funct3: "010", funct7: "0000000", opcode: "0110011" }
+  }],
   ["SLTU", {
     instructionFormat: R_TYPE,
     executionFunction: sltu,
     decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SLTU"); },
+    decodeInfo: { funct3: "011", funct7: "0000000", opcode: "0110011" }
+  }],
+  ["SNEZ", {
+    instructionFormat: PSEUDO_TYPE_A,
+    executionFunction: snez,
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SNEZ"); },
     decodeInfo: { funct3: "011", funct7: "0000000", opcode: "0110011" }
   }],
   ["AND", {
@@ -360,6 +378,12 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
     decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BLT"); },
     decodeInfo: { funct3: "100", funct7: undefined, opcode: "1100011" }
   }],
+  ["BGT", {
+    instructionFormat: B_TYPE,
+    executionFunction: bgt,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BGT"); },
+    decodeInfo: { funct3: "100", funct7: undefined, opcode: "1100011" }
+  }],
   ["BLTZ", {
     instructionFormat: PSEUDO_TYPE_C,
     executionFunction: bltz,
@@ -378,12 +402,24 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
     decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BLTU"); },
     decodeInfo: { funct3: "101", funct7: undefined, opcode: "1100011" }
   }],
+  ["BGTU", {
+    instructionFormat: B_TYPE,
+    executionFunction: bgtu,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BGTU"); },
+    decodeInfo: { funct3: "101", funct7: undefined, opcode: "1100011" }
+  }],
   ["BGE", {
     instructionFormat: B_TYPE,
     executionFunction: bge,
     decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BGE"); },
     decodeInfo: { funct3: "110", funct7: undefined, opcode: "1100011" }
-  }], 
+  }],
+  ["BLE", {
+    instructionFormat: B_TYPE,
+    executionFunction: ble,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BLE"); },
+    decodeInfo: { funct3: "110", funct7: undefined, opcode: "1100011" }
+  }],
   ["BLEZ", {
     instructionFormat: PSEUDO_TYPE_C,
     executionFunction: blez,
@@ -400,6 +436,12 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
     instructionFormat: B_TYPE,
     executionFunction: bgeu,
     decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BGEU"); },
+    decodeInfo: { funct3: "111", funct7: undefined, opcode: "1100011" }
+  }],
+  ["BLEU", {
+    instructionFormat: B_TYPE,
+    executionFunction: bleu,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BLEU"); },
     decodeInfo: { funct3: "111", funct7: undefined, opcode: "1100011" }
   }]
 ]);
@@ -862,12 +904,29 @@ function slt(inputParams: InstructionInput): void {
   setRegister(inputParams.rd, isLessThan ? "1" : "0", zeroExtend);
 }
 
+function sltz(inputParams: InstructionInput): void {
+  inputParams.rs2 = "x0";
+  slt(inputParams);
+}
+
+function sgtz(inputParams: InstructionInput): void {
+  inputParams.rs2 = inputParams.rs1;
+  inputParams.rs1 = "x0";
+  slt(inputParams);
+}
+
 function sltu(inputParams: InstructionInput): void {
   const isLessThanUnsigned: boolean = (
     parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY)
     < parseInt(getValueInRegister(inputParams.rs2)!, Base.BINARY)
   );
   setRegister(inputParams.rd, isLessThanUnsigned ? "1" : "0", zeroExtend);
+}
+
+function snez(inputParams: InstructionInput): void {
+  inputParams.rs2 = inputParams.rs1;
+  inputParams.rs1 = "x0";
+  sltu(inputParams);
 }
 
 function and(inputParams: InstructionInput): void {
@@ -1036,7 +1095,7 @@ function beq(inputParams: InstructionInput): void {
   }
 }
 
-function beqz(inputParams: InstructionInput): void { 
+function beqz(inputParams: InstructionInput): void {
   inputParams.rs2 = "x0";
   beq(inputParams);
 }
@@ -1078,12 +1137,19 @@ function blt(inputParams: InstructionInput): void {
   }
 }
 
+function bgt(inputParams: InstructionInput): void {
+  const temp: string = inputParams.rs1;
+  inputParams.rs1 = inputParams.rs2;
+  inputParams.rs2 = temp;
+  blt(inputParams);
+}
+
 function bltz(inputParams: InstructionInput): void {
   inputParams.rs2 = "x0";
   blt(inputParams);
 }
 
-function bgtz(inputParams: InstructionInput): void { 
+function bgtz(inputParams: InstructionInput): void {
   inputParams.rs2 = inputParams.rs1;
   inputParams.rs1 = "x0";
   blt(inputParams);
@@ -1105,6 +1171,12 @@ function bltu(inputParams: InstructionInput): void {
   }
 }
 
+function bgtu(inputParams: InstructionInput): void {
+  const temp: string = inputParams.rs1;
+  inputParams.rs1 = inputParams.rs2;
+  inputParams.rs2 = temp;
+  bltu(inputParams);
+}
 
 function bge(inputParams: InstructionInput): void {
   const immBin: string = decimalToTwosComplement(inputParams.imm, 12);
@@ -1122,13 +1194,20 @@ function bge(inputParams: InstructionInput): void {
   }
 }
 
+function ble(inputParams: InstructionInput): void {
+  const temp: string = inputParams.rs1;
+  inputParams.rs1 = inputParams.rs2;
+  inputParams.rs2 = temp;
+  bge(inputParams);
+}
+
 function blez(inputParams: InstructionInput): void {
   inputParams.rs2 = inputParams.rs1;
   inputParams.rs1 = "x0";
   bge(inputParams);
 }
 
-function bgez(inputParams: InstructionInput): void { 
+function bgez(inputParams: InstructionInput): void {
   inputParams.rs2 = "x0";
   bge(inputParams);
 }
@@ -1147,4 +1226,11 @@ function bgeu(inputParams: InstructionInput): void {
       )
     );
   }
+}
+
+function bleu(inputParams: InstructionInput): void {
+  const temp: string = inputParams.rs1;
+  inputParams.rs1 = inputParams.rs2;
+  inputParams.rs2 = temp;
+  bgeu(inputParams);
 }
