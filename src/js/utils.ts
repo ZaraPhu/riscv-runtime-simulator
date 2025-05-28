@@ -29,31 +29,23 @@ enum Base {
 // Current base for displaying register values
 let registerBase: number = Base.BINARY;
 
-// Operand types for instruction formats
-enum OperandType {
-  IMMEDIATE, // Immediate values (constants)
-  REGISTER, // Register references
-}
-
-// Parser status codes
-enum ParserStatus {
-  OK, // Parsing successful
-  ERR, // Error occurred during parsing
-}
-
 // Structure for parser results
+enum ParserStatus { OK, ERR }
 interface ParserResult {
-  output: string[][]; // Processed instructions
-  status: ParserStatus.OK | ParserStatus.ERR; // Result status
-  errMessage: string; // Error message if applicable
+  output: string[][];
+  status: ParserStatus.OK | ParserStatus.ERR;
+  errMessage: string;
 }
+
+interface InstructionInput { rd: string; rs1: string; rs2: string; imm: number; }
 
 interface InstructionDecodeInfo {
   funct3: string | undefined;
   funct7: string | undefined;
-  opcode: string | undefined;
+  opcode: string;
 }
 
+enum OperandType { IMMEDIATE, REGISTER }
 interface InstructionInfo {
   instructionFormat: OperandType[],
   executionFunction: Function,
@@ -61,46 +53,19 @@ interface InstructionInfo {
   decodeInfo: InstructionDecodeInfo | undefined
 }
 
-interface InstructionInput {
-  rd: string;
-  rs1: string;
-  rs2: string;
-  imm: number;
-}
 
 /**
  * Instruction Format Definitions
  * Each format defines the expected operand types for different instruction categories
  */
-// I-Type: Register-Immediate instructions (e.g., ADDI, SLTI)
-const I_TYPE: OperandType[] = [
-  OperandType.REGISTER, // Destination register
-  OperandType.REGISTER, // Source register
-  OperandType.IMMEDIATE, // Immediate value
-];
-
-// U-Type: Upper immediate instructions (e.g., LUI, AUIPC)
-const U_TYPE: OperandType[] = [
-  OperandType.REGISTER, // Destination register
-  OperandType.IMMEDIATE, // Immediate value (upper 20 bits)
-];
-
-// R-Type: Register-Register operations (e.g., ADD, SUB)
-const R_TYPE: OperandType[] = [
-  OperandType.REGISTER, // Destination register
-  OperandType.REGISTER, // Source register 1
-  OperandType.REGISTER, // Source register 2
-];
-
-// Special instruction type formats
-const NONE_TYPE: OperandType[] = []; // No operands (e.g., NOP)
-const PSEUDO_TYPE_A: OperandType[] = [
-  // Pseudo-instructions with 2 registers
-  OperandType.REGISTER,
-  OperandType.REGISTER,
-];
+const I_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER, OperandType.IMMEDIATE];
+const U_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.IMMEDIATE];
+const R_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER, OperandType.REGISTER];
+const NONE_TYPE: OperandType[] = [];
+const PSEUDO_TYPE_A: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER];
 const PSEUDO_TYPE_B: OperandType[] = [OperandType.IMMEDIATE];
-const J_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.IMMEDIATE]; // Jump instructions
+const J_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.IMMEDIATE];
+const B_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER, OperandType.IMMEDIATE];
 
 /**
  * Register System
@@ -199,55 +164,55 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
   ["ADDI", {
     instructionFormat: I_TYPE,
     executionFunction: addi,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "ADDI") },
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "ADDI"); },
     decodeInfo: { funct3: "000", funct7: undefined, opcode: "0010011" }
   }],
   ["MV", {
     instructionFormat: PSEUDO_TYPE_A,
     executionFunction: mv,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "MV") },
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "MV"); },
     decodeInfo: { funct3: "000", funct7: undefined, opcode: "0010011" }
   }],
   ["NOP", {
     instructionFormat: PSEUDO_TYPE_A,
     executionFunction: nop,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "NOP") },
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "NOP"); },
     decodeInfo: { funct3: "000", funct7: undefined, opcode: "0010011" }
   }],
   ["SLTI", {
     instructionFormat: I_TYPE,
     executionFunction: slti,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "SLTI") },
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "SLTI"); },
     decodeInfo: { funct3: "010", funct7: undefined, opcode: "0010011" }
   }],
   ["SLTIU", {
     instructionFormat: I_TYPE,
     executionFunction: sltiu,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "SLTIU") },
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "SLTIU"); },
     decodeInfo: { funct3: "011", funct7: undefined, opcode: "0010011" }
   }],
   ["SEQZ", {
     instructionFormat: PSEUDO_TYPE_A,
     executionFunction: seqz,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "SEQZ") },
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "SEQZ"); },
     decodeInfo: { funct3: "011", funct7: undefined, opcode: "0010011" }
   }],
   ["ANDI", {
     instructionFormat: I_TYPE,
     executionFunction: andi,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "ANDI") },
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "ANDI"); },
     decodeInfo: { funct3: "111", funct7: undefined, opcode: "0010011" }
   }],
   ["ORI", {
     instructionFormat: I_TYPE,
     executionFunction: ori,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "ORI") },
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "ORI"); },
     decodeInfo: { funct3: "110", funct7: undefined, opcode: "0010011" }
   }],
   ["XORI", {
     instructionFormat: I_TYPE,
     executionFunction: xori,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "XORI") },
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "XORI"); },
     decodeInfo: { funct3: "100", funct7: undefined, opcode: "0010011" }
   }],
   ["SLLI", {
@@ -271,73 +236,73 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
   ["LUI", {
     instructionFormat: U_TYPE,
     executionFunction: lui,
-    decodeFunction: (inputParams: InstructionInput) => { return uTypeDecode(inputParams, "LUI") },
+    decodeFunction: (inputParams: InstructionInput) => { return uTypeDecode(inputParams, "LUI"); },
     decodeInfo: { funct3: undefined, funct7: undefined, opcode: "0110111" }
   }],
   ["AUIPC", {
     instructionFormat: U_TYPE,
     executionFunction: auipc,
-    decodeFunction: (inputParams: InstructionInput) => { return uTypeDecode(inputParams, "AUIPC") },
+    decodeFunction: (inputParams: InstructionInput) => { return uTypeDecode(inputParams, "AUIPC"); },
     decodeInfo: { funct3: undefined, funct7: undefined, opcode: "0010111" }
   }],
   ["ADD", {
     instructionFormat: R_TYPE,
     executionFunction: add,
-    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "ADD") },
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "ADD"); },
     decodeInfo: { funct3: "000", funct7: "0000000", opcode: "0110011" }
   }],
   ["SUB", {
     instructionFormat: R_TYPE,
     executionFunction: sub,
-    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SUB") },
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SUB"); },
     decodeInfo: { funct3: "000", funct7: "0100000", opcode: "0110011" }
   }],
   ["SLT", {
     instructionFormat: R_TYPE,
     executionFunction: slt,
-    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SLT") },
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SLT"); },
     decodeInfo: { funct3: "010", funct7: "0000000", opcode: "0110011" }
   }],
   ["SLTU", {
     instructionFormat: R_TYPE,
     executionFunction: sltu,
-    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SLTU") },
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SLTU"); },
     decodeInfo: { funct3: "011", funct7: "0000000", opcode: "0110011" }
   }],
   ["AND", {
     instructionFormat: R_TYPE,
     executionFunction: and,
-    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "AND") },
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "AND"); },
     decodeInfo: { funct3: "111", funct7: "0000000", opcode: "0110011" }
   }],
   ["OR", {
     instructionFormat: R_TYPE,
     executionFunction: or,
-    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "OR") },
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "OR"); },
     decodeInfo: { funct3: "110", funct7: "0000000", opcode: "0110011" }
   }],
   ["XOR", {
     instructionFormat: R_TYPE,
     executionFunction: xor,
-    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "XOR") },
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "XOR"); },
     decodeInfo: { funct3: "100", funct7: "0000000", opcode: "0110011" }
   }],
   ["SLL", {
     instructionFormat: R_TYPE,
     executionFunction: sll,
-    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SLL") },
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SLL"); },
     decodeInfo: { funct3: "001", funct7: "0000000", opcode: "0110011" }
   }],
   ["SRL", {
     instructionFormat: R_TYPE,
     executionFunction: srl,
-    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SRL") },
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SRL"); },
     decodeInfo: { funct3: "101", funct7: "0000000", opcode: "0110011" }
   }],
   ["SRA", {
     instructionFormat: R_TYPE,
     executionFunction: sra,
-    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SRA") },
+    decodeFunction: (inputParams: InstructionInput) => { return rTypeDecode(inputParams, "SRA"); },
     decodeInfo: { funct3: "101", funct7: "0100000", opcode: "0110011" }
   }],
   ["JAL", {
@@ -355,8 +320,44 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
   ["JALR", {
     instructionFormat: I_TYPE,
     executionFunction: jalr,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "JALR") },
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "JALR"); },
     decodeInfo: { funct3: "000", funct7: undefined, opcode: "1100111" }
+  }],
+  ["BEQ", {
+    instructionFormat: B_TYPE,
+    executionFunction: beq,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BEQ"); },
+    decodeInfo: { funct3: "000", funct7: undefined, opcode: "1100011" }
+  }],
+  ["BNE", {
+    instructionFormat: B_TYPE,
+    executionFunction: bne,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BNE"); },
+    decodeInfo: { funct3: "001", funct7: undefined, opcode: "1100011" }
+  }],
+  ["BLT", {
+    instructionFormat: B_TYPE,
+    executionFunction: blt,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BLT"); },
+    decodeInfo: { funct3: "100", funct7: undefined, opcode: "1100011" }
+  }],
+  ["BLTU", {
+    instructionFormat: B_TYPE,
+    executionFunction: bltu,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BLTU"); },
+    decodeInfo: { funct3: "101", funct7: undefined, opcode: "1100011" }
+  }],
+  ["BGE", {
+    instructionFormat: B_TYPE,
+    executionFunction: bge,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BGE"); },
+    decodeInfo: { funct3: "110", funct7: undefined, opcode: "1100011" }
+  }], 
+  ["BGEU", {
+    instructionFormat: B_TYPE,
+    executionFunction: bgeu,
+    decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BGEU"); },
+    decodeInfo: { funct3: "111", funct7: undefined, opcode: "1100011" }
   }]
 ]);
 
@@ -901,13 +902,13 @@ function jal(inputParams: InstructionInput): void {
       zeroExtend,
     ),
   );
-  for (let i = 0; i < 2; i++) {
-    // immediate is multiple of 2 bytes
-    setRegister(
-      "pc",
-      binaryAdd(getValueInRegister("pc")!, immBin),
-    );
-  }
+  setRegister(
+    "pc",
+    binaryAdd(
+      getValueInRegister("pc")!,
+      binaryAdd(immBin, immBin)
+    ),
+  );
 }
 
 function jal_decode(inputParams: InstructionInput): string {
@@ -961,4 +962,115 @@ function jalr(inputParams: InstructionInput): void {
       zeroExtend,
     ),
   );
+}
+
+function bTypeDecode(inputParams: InstructionInput, instructionName: string): string {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!;
+  return (
+    immBin.charAt(11)
+    + immBin.slice(4, 10).split("").reverse().join("")
+    + registerPositionInBinary(inputParams.rs2)!
+    + registerPositionInBinary(inputParams.rs1)!
+    + decodeInfo.funct3!
+    + immBin.slice(0, 4).split("").reverse().join("")
+    + immBin.charAt(10)
+    + decodeInfo.opcode
+  );
+}
+
+function beq(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm, 12);
+  if (
+    getValueInRegister(inputParams.rs1)!
+    === getValueInRegister(inputParams.rs2)!
+  ) {
+    setRegister(
+      "pc",
+      binaryAdd(
+        getValueInRegister("pc")!,
+        binaryAdd(immBin, immBin) // jump in signed offest of 2 bytes
+      )
+    );
+  }
+}
+
+function bne(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm, 12);
+  if (
+    getValueInRegister(inputParams.rs1)!
+    !== getValueInRegister(inputParams.rs2)!
+  ) {
+    setRegister(
+      "pc",
+      binaryAdd(
+        getValueInRegister("pc")!,
+        binaryAdd(immBin, immBin) // jump in signed offest of 2 bytes
+      )
+    );
+  }
+}
+
+function blt(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm, 12);
+  if (
+    twosComplementToDecimal(inputParams.rs1)
+    < twosComplementToDecimal(inputParams.rs2)
+  ) {
+    setRegister(
+      "pc",
+      binaryAdd(
+        getValueInRegister("pc")!,
+        binaryAdd(immBin, immBin) // jump in signed offest of 2 bytes
+      )
+    );
+  }
+}
+
+function bltu(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm, 12);
+  if (
+    parseInt(inputParams.rs1, Base.BINARY)
+    < parseInt(inputParams.rs2, Base.BINARY)
+  ) {
+    setRegister(
+      "pc",
+      binaryAdd(
+        getValueInRegister("pc")!,
+        binaryAdd(immBin, immBin) // jump in signed offest of 2 bytes
+      )
+    );
+  }
+}
+
+function bge(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm, 12);
+  if (
+    twosComplementToDecimal(inputParams.rs1)
+    >= twosComplementToDecimal(inputParams.rs2)
+  ) {
+    setRegister(
+      "pc",
+      binaryAdd(
+        getValueInRegister("pc")!,
+        binaryAdd(immBin, immBin) // jump in signed offest of 2 bytes
+      )
+    );
+  }
+}
+
+function bgeu(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm, 12);
+  if (
+    parseInt(inputParams.rs1, Base.BINARY)
+    >= parseInt(inputParams.rs2, Base.BINARY)
+  ) {
+    setRegister(
+      "pc",
+      binaryAdd(
+        getValueInRegister("pc")!,
+        binaryAdd(immBin, immBin) // jump in signed offest of 2 bytes
+      )
+    );
+  }
 }
