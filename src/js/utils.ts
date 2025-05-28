@@ -355,8 +355,8 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
   ["JALR", {
     instructionFormat: I_TYPE,
     executionFunction: jalr,
-    decodeFunction: jalr_decode,
-    decodeInfo: { funct3: undefined, funct7: undefined, opcode: "1101111" }
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "JALR") },
+    decodeInfo: { funct3: "000", funct7: undefined, opcode: "1100111" }
   }]
 ]);
 
@@ -493,6 +493,16 @@ function signExtend(bits: string, len: number = XLEN): string {
   return bits.padStart(len, bits.charAt(0));
 }
 
+function getValueInRegister(reg: string): string | undefined {
+  return Array.from(STRINGS_TO_REGISTERS.keys()).includes(reg)
+    ? registers.get(STRINGS_TO_REGISTERS.get(reg)!)! : undefined;
+}
+
+function registerPositionInBinary(reg: string): string | undefined {
+  return Array.from(STRINGS_TO_REGISTERS.keys()).includes(reg)
+    ? zeroExtend(STRINGS_TO_REGISTERS.get(reg)!.toString(Base.BINARY), 5) : undefined;
+}
+
 function decimalToTwosComplement(
   val: number,
   numDigits: number = XLEN,
@@ -595,9 +605,9 @@ function iTypeDecode(inputParams: InstructionInput, instructionName: string): st
   const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!;
   return (
     decimalToTwosComplement(Number(inputParams.imm)).slice(-12) // imm
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + registerPositionInBinary(inputParams.rs1)! //rs
     + decodeInfo.funct3! // funct3
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
+    + registerPositionInBinary(inputParams.rd)! // rd
     + decodeInfo.opcode!  // opcode
   );
 }
@@ -605,7 +615,7 @@ function iTypeDecode(inputParams: InstructionInput, instructionName: string): st
 function addi(inputParams: InstructionInput): void {
   const binarySum: string = binaryAdd(
     decimalToTwosComplement(Number(inputParams.imm)).slice(-12),
-    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
+    getValueInRegister(inputParams.rs1)!
   );
   setRegister(inputParams.rd, binarySum);
 }
@@ -624,7 +634,7 @@ function nop(inputParams: InstructionInput): void {
 
 function slti(inputParams: InstructionInput): void {
   const isLessThan: boolean = (
-    twosComplementToDecimal(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!)
+    twosComplementToDecimal(getValueInRegister(inputParams.rs1)!)
     < twosComplementToDecimal(decimalToTwosComplement(Number(inputParams.imm)).slice(-12))
   );
   setRegister(inputParams.rd, isLessThan ? "1" : "0", zeroExtend);
@@ -632,7 +642,7 @@ function slti(inputParams: InstructionInput): void {
 
 function sltiu(inputParams: InstructionInput): void {
   const isLessThanUnsigned: boolean = (
-    twosComplementToDecimal(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!)
+    twosComplementToDecimal(getValueInRegister(inputParams.rs1)!)
     < parseInt(decimalToTwosComplement(Number(inputParams.imm)).slice(-12), Base.BINARY)
   );
   setRegister(inputParams.rd, isLessThanUnsigned ? "1" : "0", zeroExtend);
@@ -645,7 +655,7 @@ function seqz(inputParams: InstructionInput): void {
 
 function andi(inputParams: InstructionInput): void {
   const immBits: string[] = decimalToTwosComplement(Number(inputParams.imm)).slice(-12).split("");
-  const sourceBits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
+  const sourceBits: string[] = getValueInRegister(inputParams.rs1)!.split("");
   const resultBits: string[] = [];
   for (let i: number = 0; i < XLEN; i++) {
     resultBits[i] = ((immBits[i] === "1") && (sourceBits[i] === "1")) ? "1" : "0";
@@ -654,11 +664,11 @@ function andi(inputParams: InstructionInput): void {
 }
 
 function ori(inputParams: InstructionInput): void {
-  const immBits: string[] = 
+  const immBits: string[] =
     decimalToTwosComplement(Number(inputParams.imm))
-    .slice(-12)
-    .split("");
-  const sourceBits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
+      .slice(-12)
+      .split("");
+  const sourceBits: string[] = getValueInRegister(inputParams.rs1)!.split("");
   const resultBits: string[] = [];
   for (let i: number = 0; i < XLEN; i++) {
     resultBits[i] = ((immBits[i] === "1") || (sourceBits[i] === "1")) ? "1" : "0";
@@ -668,7 +678,7 @@ function ori(inputParams: InstructionInput): void {
 
 function xori(inputParams: InstructionInput): void {
   const immBits: string[] = decimalToTwosComplement(Number(inputParams.imm)).slice(-12).split("");
-  const sourceBits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
+  const sourceBits: string[] = getValueInRegister(inputParams.rs1)!.split("");
   const resultBits: string[] = [];
   for (let i: number = 0; i < XLEN; i++) {
     resultBits[i] = !(immBits[i] === sourceBits[i]) ? "1" : "0";
@@ -679,7 +689,7 @@ function xori(inputParams: InstructionInput): void {
 function slli(inputParams: InstructionInput): void {
   const immBits: string = decimalToTwosComplement(Number(inputParams.imm)).slice(-5);
   const result: string = (
-    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
+    getValueInRegister(inputParams.rs1)!
     + "0".repeat(parseInt(immBits, Base.BINARY))
   ).slice(-XLEN);
   setRegister(inputParams.rd, result);
@@ -690,10 +700,10 @@ function slli_decode(inputParams: InstructionInput): string {
   return (
     "0".repeat(7)
     + decimalToTwosComplement(Number(inputParams.imm)).slice(-5) // imm
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + registerPositionInBinary(inputParams.rs1)! //rs
     + instructionInfo.decodeInfo!.funct3! // funct3
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
-    + zeroExtend(instructionInfo.decodeInfo!.opcode!)  // opcode
+    + registerPositionInBinary(inputParams.rd)! // rd
+    + instructionInfo.decodeInfo!.opcode!  // opcode
   );
 }
 
@@ -711,10 +721,10 @@ function srli_decode(inputParams: InstructionInput): string {
   return (
     "0".repeat(7)
     + decimalToTwosComplement(Number(inputParams.imm)).slice(-5) // imm
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + registerPositionInBinary(inputParams.rs1)! //rs
     + instructionInfo.decodeInfo!.funct3! // funct3
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
-    + zeroExtend(instructionInfo.decodeInfo!.opcode!)  // opcode
+    + registerPositionInBinary(inputParams.rd)! // rd
+    + instructionInfo.decodeInfo!.opcode!  // opcode
   );
 }
 
@@ -735,24 +745,24 @@ function srai_decode(inputParams: InstructionInput): string {
   return (
     "01" + "0".repeat(5)
     + decimalToTwosComplement(Number(inputParams.imm)).slice(-5) // imm
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5) //rs
+    + registerPositionInBinary(inputParams.rs1)! //rs
     + instructionInfo.decodeInfo!.funct3! // funct3
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5) // rd
-    + zeroExtend(instructionInfo.decodeInfo!.opcode!)  // opcode
+    + registerPositionInBinary(inputParams.rd)! // rd
+    + instructionInfo.decodeInfo!.opcode!  // opcode
   );
 }
 
 function uTypeDecode(inputParams: InstructionInput, instructionName: string) {
   return (
     decimalToTwosComplement(Number(inputParams.imm)).slice(0, 20)
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5)
+    + registerPositionInBinary(inputParams.rd)!
     + INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!.opcode
   );
 }
 
 function lui(inputParams: InstructionInput): void {
   setRegister(
-    inputParams.rd, 
+    inputParams.rd,
     decimalToTwosComplement(Number(inputParams.imm)).slice(0, 20) + "0".repeat(12)
   );
 }
@@ -762,7 +772,7 @@ function auipc(inputParams: InstructionInput): void {
     inputParams.rd,
     binaryAdd(
       decimalToTwosComplement(Number(inputParams.imm)).slice(0, 20) + "0".repeat(12),
-      registers.get(STRINGS_TO_REGISTERS.get("pc")!)!
+      getValueInRegister("pc")!
     )
   );
 }
@@ -771,49 +781,49 @@ function rTypeDecode(inputParams: InstructionInput, instructionName: string): st
   const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!;
   return (
     decodeInfo.funct7
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs2)!.toString(Base.BINARY), 5)
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rs1)!.toString(Base.BINARY), 5)
+    + registerPositionInBinary(inputParams.rs2)!
+    + registerPositionInBinary(inputParams.rs1)!
     + decodeInfo.funct3
-    + zeroExtend(STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY), 5)
+    + registerPositionInBinary(inputParams.rd)!
     + decodeInfo.opcode
   );
 }
 
 function add(inputParams: InstructionInput): void {
   const sumValue: string = binaryAdd(
-    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!,
-    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!,
+    getValueInRegister(inputParams.rs1)!,
+    getValueInRegister(inputParams.rs2)!
   );
   setRegister(inputParams.rd, sumValue);
 }
 
 function sub(inputParams: InstructionInput): void {
   const subValue: string = binarySub(
-    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!,
-    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!,
+    getValueInRegister(inputParams.rs1)!,
+    getValueInRegister(inputParams.rs2)!
   );
   setRegister(inputParams.rd, subValue);
 }
 
 function slt(inputParams: InstructionInput): void {
   const isLessThan: boolean = (
-    twosComplementToDecimal(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!)
-    < twosComplementToDecimal(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!)
+    twosComplementToDecimal(getValueInRegister(inputParams.rs1)!)
+    < twosComplementToDecimal(getValueInRegister(inputParams.rs2)!)
   );
   setRegister(inputParams.rd, isLessThan ? "1" : "0", zeroExtend);
 }
 
 function sltu(inputParams: InstructionInput): void {
   const isLessThanUnsigned: boolean = (
-    parseInt(registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!, Base.BINARY)
-    < parseInt( registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!, Base.BINARY)
+    parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY)
+    < parseInt(getValueInRegister(inputParams.rs2)!, Base.BINARY)
   );
   setRegister(inputParams.rd, isLessThanUnsigned ? "1" : "0", zeroExtend);
 }
 
 function and(inputParams: InstructionInput): void {
-  const source1Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
-  const source2Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.split("");
+  const source1Bits: string[] = getValueInRegister(inputParams.rs1)!.split("");
+  const source2Bits: string[] = getValueInRegister(inputParams.rs2)!.split("");
   const resultBits: string[] = [];
   for (let i = 0; i < XLEN; i++) {
     resultBits[i] = ((source1Bits[i] == "1") && (source2Bits[i] == "1")) ? "1" : "0";
@@ -822,8 +832,8 @@ function and(inputParams: InstructionInput): void {
 }
 
 function or(inputParams: InstructionInput): void {
-  const source1Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
-  const source2Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.split("");
+  const source1Bits: string[] = getValueInRegister(inputParams.rs1)!.split("");
+  const source2Bits: string[] = getValueInRegister(inputParams.rs2)!.split("");
   const resultBits: string[] = [];
   for (let i = 0; i < XLEN; i++) {
     resultBits[i] = ((source1Bits[i] === "1") || (source2Bits[i] === "1")) ? "1" : "0";
@@ -832,8 +842,8 @@ function or(inputParams: InstructionInput): void {
 }
 
 function xor(inputParams: InstructionInput): void {
-  const source1Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!.split("");
-  const source2Bits: string[] = registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.split("");
+  const source1Bits: string[] = getValueInRegister(inputParams.rs1)!.split("");
+  const source2Bits: string[] = getValueInRegister(inputParams.rs2)!.split("");
   const resultBits: string[] = [];
   for (let i = 0; i < XLEN; i++) {
     resultBits[i] = !(source1Bits[i] === source2Bits[i]) ? "1" : "0";
@@ -842,50 +852,41 @@ function xor(inputParams: InstructionInput): void {
 }
 
 function sll(inputParams: InstructionInput): void {
-  const rs2Val: number = parseInt(
-    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.slice(-5),
-    Base.BINARY,
+  const rs2TruncatedVal: number = parseInt(
+    getValueInRegister(inputParams.rs2)!.slice(-5),
+    Base.BINARY
   );
-  const sourceBin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
   setRegister(
     inputParams.rd,
-    (sourceBin + zeroExtend("0", rs2Val)).slice(-XLEN),
+    (getValueInRegister(inputParams.rs1)! + zeroExtend("0", rs2TruncatedVal)).slice(-XLEN),
   );
 }
 
 function srl(inputParams: InstructionInput): void {
-  const rs2Val: number = parseInt(
-    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.slice(-5),
+  const rs2TruncatedVal: number = parseInt(
+    getValueInRegister(inputParams.rs2)!.slice(-5),
     Base.BINARY,
   );
-  const sourceBin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
   setRegister(
     inputParams.rd,
-    (zeroExtend("0", rs2Val) + sourceBin).substring(0, XLEN),
+    (zeroExtend("0", rs2TruncatedVal) + getValueInRegister(inputParams.rs1)!).substring(0, XLEN),
   );
 }
 
 function sra(inputParams: InstructionInput): void {
-  const rs2Val: number = parseInt(
-    registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs2)!)!.slice(-5),
+  const rs2TruncatedVal: number = parseInt(
+    getValueInRegister(inputParams.rs2)!.slice(-5),
     Base.BINARY,
   );
-  const sourceBin: string = registers.get(
-    STRINGS_TO_REGISTERS.get(inputParams.rs1)!,
-  )!;
   if (inputParams.rs1[0].localeCompare("0") == 0) {
     setRegister(
       inputParams.rd,
-      (zeroExtend("0", rs2Val) + sourceBin).substring(0, XLEN),
+      (zeroExtend("0", rs2TruncatedVal) + getValueInRegister(inputParams.rs1)!).substring(0, XLEN),
     );
   } else {
     setRegister(
       inputParams.rd,
-      (zeroExtend("1", rs2Val) + sourceBin).substring(0, XLEN),
+      (zeroExtend("1", rs2TruncatedVal) + getValueInRegister(inputParams.rs1)!).substring(0, XLEN),
     );
   }
 }
@@ -895,7 +896,7 @@ function jal(inputParams: InstructionInput): void {
   setRegister(
     inputParams.rd,
     binaryAdd(
-      registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,
+      getValueInRegister("pc")!,
       "100",
       zeroExtend,
     ),
@@ -904,7 +905,7 @@ function jal(inputParams: InstructionInput): void {
     // immediate is multiple of 2 bytes
     setRegister(
       "pc",
-      binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, immBin),
+      binaryAdd(getValueInRegister("pc")!, immBin),
     );
   }
 }
@@ -913,17 +914,14 @@ function jal_decode(inputParams: InstructionInput): string {
   const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-20);
   const decodeInfo: InstructionDecodeInfo =
     INSTRUCTION_TO_INFO.get("JAL")!.decodeInfo!;
-  let machineCode: string =
-    immBin.charAt(19) +
-    immBin.slice(0, 9) +
-    immBin.charAt(10) +
-    immBin.slice(11, 18) +
-    zeroExtend(
-      STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
-      5,
-    ) +
-    decodeInfo.opcode;
-  return machineCode;
+  return (
+    immBin.charAt(19)
+    + immBin.slice(0, 9)
+    + immBin.charAt(10)
+    + immBin.slice(11, 18)
+    + getValueInRegister(inputParams.rd)!
+    + decodeInfo.opcode
+  );
 }
 
 function j(inputParams: InstructionInput): void {
@@ -937,50 +935,30 @@ function j_decode(inputParams: InstructionInput): string {
 }
 
 function not(inputParams: InstructionInput): void {
-  const bits: string[] = registers
-    .get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
-    .split("");
-  for (let i = 0; i < bits.length; i++) {
-    bits[i] = bits[i].localeCompare("1") == 0 ? "0" : "1";
+  const sourceBits: string[] = getValueInRegister(inputParams.rs1)!.split("");
+  for (let i = 0; i < sourceBits.length; i++) {
+    sourceBits[i] = (sourceBits[i].localeCompare("1") == 0) ? "0" : "1";
   }
-  setRegister(inputParams.rd, bits.join(""));
+  setRegister(inputParams.rd, sourceBits.join(""));
 }
 
 function jalr(inputParams: InstructionInput): void {
   const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
-  const sourceRegisterVal: number = STRINGS_TO_REGISTERS.get(inputParams.rs1)!;
   const result: string[] = binaryAdd(
     immBin,
-    registers.get(sourceRegisterVal)!,
+    getValueInRegister(inputParams.rs1)!,
   ).split("");
   result[-1] = "0";
   setRegister(
     "pc",
-    binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, result.join("")),
+    binaryAdd(getValueInRegister("pc")!, result.join("")),
   );
   setRegister(
     inputParams.rd,
     binaryAdd(
-      registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,
+      getValueInRegister("pc")!,
       "100",
       zeroExtend,
     ),
   );
-}
-
-function jalr_decode(inputParams: InstructionInput): string {
-  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
-  const sourceRegisterVal: number = STRINGS_TO_REGISTERS.get(inputParams.rs1)!;
-  const decodeInfo: InstructionDecodeInfo =
-    INSTRUCTION_TO_INFO.get("JAL")!.decodeInfo!;
-  let machineCode: string =
-    immBin +
-    zeroExtend(sourceRegisterVal.toString(Base.BINARY), 5) +
-    decodeInfo.funct3 +
-    zeroExtend(
-      STRINGS_TO_REGISTERS.get(inputParams.rd)!.toString(Base.BINARY),
-      5,
-    ) +
-    decodeInfo.opcode;
-  return machineCode;
 }

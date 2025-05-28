@@ -254,7 +254,7 @@ assembleButton?.addEventListener("click", () => {
 
 stepButton?.addEventListener("click", () => {
   if (instructionsList.length == 0) {
-    raiseError("Instructions have not yet been assembled.");
+    raiseError("Instructions must be assembled before execution.");
   } else {
     if (instructionsList[currentLineNumber]) {
       executeInstruction(instructionsList[currentLineNumber]);
