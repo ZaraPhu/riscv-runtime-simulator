@@ -179,9 +179,17 @@ function fillInputParams(instructionFormat: OperandType[], destructuredInstructi
     case PSEUDO_TYPE_B:
       inputParams.imm = Number(destructuredInstruction[1]);
       break;
+    case PSEUDO_TYPE_C:
+      inputParams.rs1 = destructuredInstruction[1];
+      inputParams.imm = Number(destructuredInstruction[2]);
+      break;
     case J_TYPE:
       inputParams.rd = destructuredInstruction[1];
       inputParams.imm = Number(destructuredInstruction[2]);
+      break;
+    case B_TYPE:
+      [inputParams.rs1, inputParams.rs2] = destructuredInstruction.slice(1, 3);
+      inputParams.imm = Number(destructuredInstruction[3]);
       break;
     default:
       console.log("Got an invalid instruction type.");
@@ -258,6 +266,7 @@ stepButton?.addEventListener("click", () => {
   } else {
     if (instructionsList[currentLineNumber]) {
       executeInstruction(instructionsList[currentLineNumber]);
+      // TODO: alter for all branch instructions too
       if (!["JAL", "JALR"].includes(instructionsList[currentLineNumber][0])) {
         setRegister("pc", binaryAdd(registers.get(STRINGS_TO_REGISTERS.get("pc")!)!, "100", zeroExtend));
       }

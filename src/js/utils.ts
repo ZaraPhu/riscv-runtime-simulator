@@ -367,7 +367,7 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
     decodeInfo: { funct3: "100", funct7: undefined, opcode: "1100011" }
   }],
   ["BGTZ", {
-    instructionFOrmat: PSEUDO_TYPE_C,
+    instructionFormat: PSEUDO_TYPE_C,
     executionFunction: bgtz,
     decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BGTZ"); },
     decodeInfo: { funct3: "100", funct7: undefined, opcode: "1100011" }
