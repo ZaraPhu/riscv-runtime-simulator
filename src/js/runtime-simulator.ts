@@ -266,7 +266,7 @@ stepButton?.addEventListener("click", () => {
         Base.BINARY,
       ) / 4;
     } else { 
-      console.log("Program completed execution.");
+      raiseError("Program has finished executing.");
     }
   }
 });
