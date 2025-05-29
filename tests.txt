@@ -1,0 +1,138 @@
+/*** ADDI ***/
+# Test basic ADDI operation
+ADDI x1, x0, 5
+ADDI x2, x0, 10
+ADDI x3, x1, 3
+
+# Test ADDI with negative immediate
+ADDI x1, x0, 10
+ADDI x2, x1, -5
+
+# Test ADDI with zero immediate
+ADDI x1, x0, 20
+ADDI x2, x1, 0
+
+# Test ADDI with maximum positive immediate
+ADDI x1, x0, 2047
+
+# Test ADDI with minimum negative immediate
+ADDI x1, x0, -2048
+
+# Test ADDI that overflows
+ADDI x1, x0, 2047
+ADDI x2, x1, 10
+
+/*** MV ***/
+# Test MV basic operation
+ADDI x1, x0, 42
+MV x2, x1
+MV x3, x2
+
+# Test MV with register zero as source
+MV x1, x0
+
+# Test MV followed by ADDI
+ADDI x1, x0, 15
+MV x2, x1
+ADDI x2, x2, 5
+
+# Test chain of operations
+ADDI x1, x0, 10
+ADDI x2, x0, 20
+MV x3, x1
+MV x4, x2
+ADDI x5, x3, 5
+ADDI x6, x4, -5
+MV x7, x5
+MV x8, x6
+
+# Test writing to x0 (should remain 0)
+ADDI x1, x0, 42
+MV x0, x1
+ADDI x2, x0, 10
+
+/*** NOP ***/
+# Test basic NOP operation
+NOP
+NOP
+NOP
+
+# Test NOP between instructions
+ADDI x1, x0, 5
+NOP
+ADDI x2, x0, 10
+
+# Test multiple NOPs in sequence
+ADDI x1, x0, 15
+NOP
+NOP
+NOP
+ADDI x2, x0, 25
+
+# Test NOP with program counter
+ADDI x1, x0, 1
+NOP
+ADDI x2, x0, 2
+NOP
+ADDI x3, x0, 3
+
+# Test NOP in mixed instruction sequence
+ADDI x1, x0, 10
+NOP
+MV x2, x1
+NOP
+ADDI x3, x2, 5
+
+/** SLTI/SLTIU ***/
+# Test SLTI basic operation (signed comparison)
+ADDI x1, x0, 10
+SLTI x2, x1, 15  
+SLTI x3, x1, 5 
+SLTI x4, x1, 10
+
+# Test SLTI with negative values
+ADDI x1, x0, -10
+SLTI x2, x1, 5   # -10 < 5, x2 should be 1
+SLTI x3, x1, -5  # -10 < -5, x3 should be 1
+SLTI x4, x1, -15 # -10 > -15, x4 should be 0
+
+# Test SLTIU basic operation (unsigned comparison)
+ADDI x1, x0, 10
+SLTIU x2, x1, 15  # 10 < 15, x2 should be 1
+SLTIU x3, x1, 5   # 10 > 5, x3 should be 0
+SLTIU x4, x1, 10  # 10 = 10, x4 should be 0
+
+# Test SLTIU with "negative" values (treated as large unsigned)
+ADDI x1, x0, 10
+SLTIU x2, x1, -1   # 10 < (2^32-1), x2 should be 1
+ADDI x3, x0, -5
+SLTIU x4, x3, 10   # (2^32-5) > 10, x4 should be 0
+
+# Test SLTI and SLTIU with edge cases
+ADDI x1, x0, 2047
+SLTI x2, x1, 2047  # 2047 = 2047, x2 should be 0
+SLTI x3, x1, -2048 # 2047 > -2048, x3 should be 0
+SLTIU x4, x0, 1    # 0 < 1, x4 should be 1
+ADDI x5, x0, -1
+SLTIU x6, x1, -1   # Any positive < (2^32-1), x6 should be 1
+
+# Test SLTI with boundary conditions
+ADDI x1, x0, -2048  # Minimum immediate value
+SLTI x2, x1, -2047  # -2048 < -2047, x2 should be 1
+ADDI x3, x0, 2047   # Maximum immediate value
+SLTI x4, x3, 2046   # 2047 > 2046, x4 should be 0
+
+# Test SLTIU with zero and near-zero values
+ADDI x1, x0, 0
+SLTIU x2, x1, 0     # 0 = 0, x2 should be 0
+ADDI x3, x0, 1
+SLTIU x4, x3, 0     # 1 > 0, x4 should be 0
+SLTIU x5, x0, 1     # 0 < 1, x5 should be 1
+
+# Test SLTI and SLTIU in sequence
+ADDI x1, x0, 100
+ADDI x2, x0, -100
+SLTI x3, x1, 50     # 100 < 50, x3 should be 0
+SLTI x4, x2, 50     # -100 < 50, x4 should be 1
+SLTIU x5, x1, 50    # 100 > 50, x5 should be 0
+SLTIU x6, x2, 50    # (2^32-100) > 50, x6 should be 0

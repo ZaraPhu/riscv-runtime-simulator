@@ -175,9 +175,9 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
     decodeInfo: { funct3: "000", funct7: undefined, opcode: "0010011" }
   }],
   ["NOP", {
-    instructionFormat: PSEUDO_TYPE_A,
+    instructionFormat: NONE_TYPE,
     executionFunction: nop,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "NOP"); },
+    decodeFunction: nop_decode,
     decodeInfo: { funct3: "000", funct7: undefined, opcode: "0010011" }
   }],
   ["SLTI", {
@@ -699,9 +699,11 @@ function iTypeDecode(inputParams: InstructionInput, instructionName: string): st
 }
 
 function addi(inputParams: InstructionInput): void {
+  console.log(decimalToTwosComplement(inputParams.imm).slice(-12));
   const binarySum: string = binaryAdd(
-    decimalToTwosComplement(Number(inputParams.imm)).slice(-12),
-    getValueInRegister(inputParams.rs1)!
+    decimalToTwosComplement(inputParams.imm).slice(-12),
+    getValueInRegister(inputParams.rs1)!,
+    signExtend
   );
   setRegister(inputParams.rd, binarySum);
 }
@@ -716,6 +718,13 @@ function nop(inputParams: InstructionInput): void {
   inputParams.rs1 = "x0";
   inputParams.imm = 0;
   addi(inputParams);
+}
+
+function nop_decode(inputParams: InstructionInput): string { 
+  inputParams.rd = "x0";
+  inputParams.rs1 = "x0";
+  inputParams.imm = 0;
+  return iTypeDecode(inputParams, "NOP");
 }
 
 function slti(inputParams: InstructionInput): void {
