@@ -58,13 +58,12 @@ function parseInput(instructionList: string[]): ParserResult {
 
   // Iterate through each instruction in the provided list
   for (let i: number = 0; i < instructionList.length; i++) {
-    const destructuredInstruction: string[] = instructionList[i].split(",");
-    console.log(destructuredInstruction);
-    destructuredInstruction.map((element) => { element.replace(" ", "") });
-    console.log(destructuredInstruction);
-    
-    /*
-      .map((element) => element.replace(" ", ""))*/
+    let destructuredInstruction: string[] = instructionList[i]
+      .split(" ")
+      .map(element => element.replace(",", ""));
+    destructuredInstruction = destructuredInstruction.filter(
+      (element) => !(element === " ") && !(element === "")
+    );
     // If the instruction is empty (after splitting), mark as error
     if (destructuredInstruction.length == 0) {
       appendParsingError(parsingResult, `Line ${i + 1}: Empty instruction.\n`);
@@ -221,7 +220,7 @@ hexadecimalCheck.addEventListener("click", () => {
 assembleButton?.addEventListener("click", () => {
   for (let i = 0; i < instructionsList.length; i++) { memory.set(i, "0".repeat(XLEN)); }
   fillMemoryGrid(memory);
-  
+
   // Split the assembly editor's content into an array of instructions
   const inputInstructions: string[] = assemblyEditor?.value.split("\n") || [];
 
@@ -259,7 +258,7 @@ stepButton?.addEventListener("click", () => {
         registers.get(STRINGS_TO_REGISTERS.get("pc")!)!,
         Base.BINARY,
       ) / 4;
-    } else { 
+    } else {
       raiseError("Program has finished executing.");
     }
   }
