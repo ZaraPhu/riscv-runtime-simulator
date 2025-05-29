@@ -699,7 +699,6 @@ function iTypeDecode(inputParams: InstructionInput, instructionName: string): st
 }
 
 function addi(inputParams: InstructionInput): void {
-  console.log(decimalToTwosComplement(inputParams.imm).slice(-12));
   const binarySum: string = binaryAdd(
     decimalToTwosComplement(inputParams.imm).slice(-12),
     getValueInRegister(inputParams.rs1)!,
@@ -730,15 +729,15 @@ function nop_decode(inputParams: InstructionInput): string {
 function slti(inputParams: InstructionInput): void {
   const isLessThan: boolean = (
     twosComplementToDecimal(getValueInRegister(inputParams.rs1)!)
-    < twosComplementToDecimal(decimalToTwosComplement(Number(inputParams.imm)).slice(-12))
+    < twosComplementToDecimal(decimalToTwosComplement(inputParams.imm).slice(-12))
   );
   setRegister(inputParams.rd, isLessThan ? "1" : "0", zeroExtend);
 }
 
 function sltiu(inputParams: InstructionInput): void {
   const isLessThanUnsigned: boolean = (
-    twosComplementToDecimal(getValueInRegister(inputParams.rs1)!)
-    < parseInt(decimalToTwosComplement(Number(inputParams.imm)).slice(-12), Base.BINARY)
+    parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY)
+    < parseInt(decimalToTwosComplement(inputParams.imm).slice(-12), Base.BINARY)
   );
   setRegister(inputParams.rd, isLessThanUnsigned ? "1" : "0", zeroExtend);
 }

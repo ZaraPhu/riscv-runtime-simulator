@@ -92,21 +92,21 @@ SLTI x4, x1, 10
 
 # Test SLTI with negative values
 ADDI x1, x0, -10
-SLTI x2, x1, 5   # -10 < 5, x2 should be 1
-SLTI x3, x1, -5  # -10 < -5, x3 should be 1
-SLTI x4, x1, -15 # -10 > -15, x4 should be 0
+SLTI x2, x1, 5   
+SLTI x3, x1, -5  
+SLTI x4, x1, -15 
 
 # Test SLTIU basic operation (unsigned comparison)
 ADDI x1, x0, 10
-SLTIU x2, x1, 15  # 10 < 15, x2 should be 1
-SLTIU x3, x1, 5   # 10 > 5, x3 should be 0
-SLTIU x4, x1, 10  # 10 = 10, x4 should be 0
+SLTIU x2, x1, 15  
+SLTIU x3, x1, 5   
+SLTIU x4, x1, 10  
 
 # Test SLTIU with "negative" values (treated as large unsigned)
 ADDI x1, x0, 10
-SLTIU x2, x1, -1   # 10 < (2^32-1), x2 should be 1
+SLTIU x2, x1, -1 
 ADDI x3, x0, -5
-SLTIU x4, x3, 10   # (2^32-5) > 10, x4 should be 0
+SLTIU x4, x3, 10
 
 # Test SLTI and SLTIU with edge cases
 ADDI x1, x0, 2047
