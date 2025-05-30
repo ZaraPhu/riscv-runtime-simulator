@@ -68,10 +68,10 @@ SLTIU x3, x1, 5     # expected: x3 = 0
 SLTIU x4, x1, 10    # expected: x4 = 0
 
 # Test 2: "Negative" Immediates
-ADDI x1, x0, 10     # expected: x1
-SLTIU x2, x1, -1 
-ADDI x3, x0, -5
-SLTIU x4, x3, 10
+ADDI x1, x0, 10     # expected: x1 = 10
+SLTIU x2, x1, -1    # expected: x2 = 1
+ADDI x3, x0, -5     # expected: x3 = -5
+SLTIU x4, x3, 10    # expected: x4 = 1
 
 # Test SLTI and SLTIU with edge cases
 ADDI x1, x0, 2047
