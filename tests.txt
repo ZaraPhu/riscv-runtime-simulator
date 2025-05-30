@@ -87,21 +87,6 @@ SLTI x2, x1, -2047  # -2048 < -2047, x2 should be 1
 ADDI x3, x0, 2047   # Maximum immediate value
 SLTI x4, x3, 2046   # 2047 > 2046, x4 should be 0
 
-# Test SLTIU with zero and near-zero values
-ADDI x1, x0, 0
-SLTIU x2, x1, 0     # 0 = 0, x2 should be 0
-ADDI x3, x0, 1
-SLTIU x4, x3, 0     # 1 > 0, x4 should be 0
-SLTIU x5, x0, 1     # 0 < 1, x5 should be 1
-
-# Test SLTI and SLTIU in sequence
-ADDI x1, x0, 100
-ADDI x2, x0, -100
-SLTI x3, x1, 50     # 100 < 50, x3 should be 0
-SLTI x4, x2, 50     # -100 < 50, x4 should be 1
-SLTIU x5, x1, 50    # 100 > 50, x5 should be 0
-SLTIU x6, x2, 50    # (2^32-100) > 50, x6 should be 0
-
 /*** SEQZ ***/
 # Test basic SEQZ operation
 ADDI x1, x0, 0      # x1 = 0

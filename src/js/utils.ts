@@ -160,7 +160,6 @@ const STRINGS_TO_REGISTERS: ReadonlyMap<string, number> = new Map([
   ["t6", 31],
 ]);
 
-
 const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
   ["ADDI", {
     instructionFormat: I_TYPE,
@@ -171,7 +170,7 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
   ["MV", {
     instructionFormat: PSEUDO_TYPE_A,
     executionFunction: mv,
-    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "MV"); },
+    decodeFunction: mv_decode,
     decodeInfo: { funct3: "000", funct7: undefined, opcode: "0010011" }
   }],
   ["NOP", {
@@ -446,18 +445,13 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
   }]
 ]);
 
-/*** Functions ***/
+const PC_MOD_INSTRUCTIONS: string[] = [
+  "J", "JAL", "JALR", ""
+]
+
+/*** General Functions ***/
+
 function binaryToHex(binVal: string): string {
-  /**
-   * Converts a binary string to its hexadecimal representation.
-   *
-   * This function processes the binary string in groups of 4 bits, converting
-   * each group to its corresponding hexadecimal digit. The input binary string
-   * length should ideally be a multiple of 4 for proper conversion.
-   *
-   * @param binVal - The binary string to convert
-   * @returns The hexadecimal representation of the input binary string
-   */
   let hexVal = "";
   const binValCleaned: string = zeroExtend(
     binVal,
@@ -465,23 +459,13 @@ function binaryToHex(binVal: string): string {
   );
   for (let i = 0; i < binValCleaned.length; i += 4) {
     hexVal += parseInt(binValCleaned.substring(i, i + 4), 2).toString(
-      Base.HEXADECIMAL,
+      Base.HEXADECIMAL
     );
   }
   return hexVal;
 }
 
 function binaryToOctal(binVal: string): string {
-  /**
-   * Converts a binary string to its octal representation.
-   *
-   * This function processes the binary string in groups of 3 bits, converting
-   * each group to its corresponding octal digit. The function pads the input
-   * binary string to ensure its length is a multiple of 3 bits.
-   *
-   * @param binVal - The binary string to convert
-   * @returns The octal representation of the input binary string
-   */
   let octVal = "";
   const binValCleaned: string = zeroExtend(
     binVal,
@@ -497,16 +481,6 @@ function binaryToOctal(binVal: string): string {
 }
 
 function setRegisterBase(base: number) {
-  /**
-   * Sets the base for register value display in the simulator.
-   *
-   * This function validates the provided base against supported numeric bases
-   * (binary, octal, decimal, or hexadecimal) and updates the global registerBase
-   * variable. If an invalid base is provided, it defaults to decimal.
-   *
-   * @param base - The numeric base to use for register display (2, 8, 10, or 16)
-   * @returns void - Updates the global registerBase variable
-   */
   registerBase = [
     Base.BINARY,
     Base.OCTAL,
@@ -518,19 +492,6 @@ function setRegisterBase(base: number) {
 }
 
 function updateRegisterDisplays() {
-  /**
-   * Updates all register displays with current values in the selected base format.
-   *
-   * This function iterates through all register displays and formats the current
-   * register values according to the globally selected base (registerBase). Each
-   * value is displayed with the appropriate prefix:
-   * - Binary: 0b prefix (e.g., 0b10101)
-   * - Octal: 0o prefix (e.g., 0o7654)
-   * - Hexadecimal: 0x prefix (e.g., 0xABCD)
-   * - Decimal: no prefix, shown as signed value (e.g., -42)
-   *
-   * @returns void - Modifies the DOM elements directly to display formatted register values
-   */
   registerDisplays.forEach((registerDisplay, i) => {
     if (registerBase == Base.BINARY) {
       registerDisplay.textContent = `0b${registers.get(i)!}`;
@@ -549,24 +510,8 @@ function setRegister(
   val: string,
   extendFunc: Function = signExtend,
 ): void {
-  /**
-   * Sets a value to a specific register in the RISC-V register file.
-   *
-   * If the target register is x0 or pc, the value will always be set to 0 as per RISC-V spec.
-   * For all other registers, the provided value will be set to the specified register.
-   * The function also updates the register display after setting the value.
-   *
-   * @param rd - The destination register name (e.g., "x0", "sp", "a0")
-   * @param val - The binary string value to set in the register
-   * @param extendFunc - The function used to extend the value to XLEN bits (defaults to signExtend)
-   * @returns void - Does not return a value
-   */
-
-  // Convert register name to register number
   const register: number = STRINGS_TO_REGISTERS.get(rd)!;
   let valCleaned: string = extendFunc(register == 0 ? "0" : val);
-
-  // register values are always stored as binary strings
   registers.set(register, valCleaned);
   updateRegisterDisplays();
 }
@@ -593,16 +538,11 @@ function decimalToTwosComplement(
   val: number,
   numDigits: number = XLEN,
 ): string {
-  if (val >= 0) {
-    return zeroExtend(val.toString(Base.BINARY));
-  }
-
+  if (val >= 0) { return zeroExtend(val.toString(Base.BINARY)); }
   const absVal: number = Math.abs(val);
   const bits: string = zeroExtend(absVal.toString(Base.BINARY));
-
   let chars: string[] = [...bits];
   chars = chars.map((char) => (char === "0" ? "1" : "0"));
-
   for (let i = chars.length - 1; i >= 0; i--) {
     if (chars[i] === "1") {
       chars[i] = "0";
@@ -615,11 +555,6 @@ function decimalToTwosComplement(
 }
 
 function twosComplementToDecimal(bits: string): number {
-  /**
-   * Converts a binary string in two's complement format to its decimal representation.
-   * @param bits - The binary string in two's complement format to convert
-   * @returns The decimal representation of the two's complement binary input
-   */
   if (bits[0] === "1") {
     let invertedBits: string = bits
       .split("")
@@ -637,25 +572,10 @@ function binaryAdd(
   op2: string,
   extendFunc: Function = signExtend,
 ): string {
-  /**
-   * Performs a binary addition of two binary strings.
-   * @param op1 - First binary string operand
-   * @param op2 - Second binary string operand
-   * @param extendFunc - Function used to extend operands to the same length (defaults to signExtend)
-   * @returns The binary sum of the two operands as a string
-   */
-
-  let carry: number = 0;
-  let sum: string = "";
-
-  const len: number = Math.max(op1.length, op2.length);
-  const cleanedOp1: string = extendFunc(op1, len);
-  const cleanedOp2: string = extendFunc(op2, len);
-
+  let [carry, sum, len] = [0, "", Math.max(op1.length, op2.length)];
+  const [cleanedOp1, cleanedOp2] = [extendFunc(op1, len), extendFunc(op2, len)];
   for (let i = len - 1; i >= 0; i--) {
-    let num1: string = cleanedOp1.charAt(i);
-    let num2: string = cleanedOp2.charAt(i);
-
+    let [num1, num2] = [cleanedOp1.charAt(i), cleanedOp2.charAt(i)];
     let decSum: number = parseInt(num1) + parseInt(num2) + Number(carry);
     sum = (decSum % 2 == 0 ? "0" : "1") + sum;
     carry = decSum >= 2 ? 1 : 0;
@@ -668,24 +588,17 @@ function binarySub(
   op2: string,
   extendFunc: Function = signExtend,
 ): string {
-  /**
-   * Performs a binary subtraction of two binary strings using two's complement method.
-   * @param op1 - First binary string operand (minuend)
-   * @param op2 - Second binary string operand (subtrahend)
-   * @param extendFunc - Function used to extend operands to the same length (defaults to signExtend)
-   * @returns The binary difference of the two operands as a string
-   */
   const len: number = Math.max(op1.length, op2.length);
   const cleanedOp2: string = extendFunc(op2, len);
-
-  const op2Minus = binaryAdd(cleanedOp2, "1", signExtend); // first subtract 1 from the number
-  let negOp2: string = "";
+  const op2Minus: string[] = binaryAdd(cleanedOp2, "1", signExtend).split("");
+  let negOp2: string[] = [];
   for (let i = len - 1; i >= 0; i--) {
-    // then flip all the bits
-    negOp2 = (op2Minus.charAt(i) == "0" ? "1" : "0") + negOp2;
+    negOp2[i] = (op2Minus[i] == "0") ? "1" : "0";
   }
-  return binaryAdd(op1, negOp2);
+  return binaryAdd(op1, negOp2.join(""));
 }
+
+/*** Instruction Decoding Functions ***/
 
 function iTypeDecode(inputParams: InstructionInput, instructionName: string): string {
   const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!;
@@ -698,6 +611,75 @@ function iTypeDecode(inputParams: InstructionInput, instructionName: string): st
   );
 }
 
+function mv_decode(inputParams: InstructionInput): string {
+  inputParams.imm = 0;
+  return iTypeDecode(inputParams, "ADDI");
+}
+
+function nop_decode(inputParams: InstructionInput): string { 
+  inputParams.rd = "x0";
+  inputParams.rs1 = "x0";
+  inputParams.imm = 0;
+  return iTypeDecode(inputParams, "NOP");
+}
+
+function slli_decode(inputParams: InstructionInput): string {
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("SLLI")!;
+  return (
+    "0".repeat(7)
+    + decimalToTwosComplement(Number(inputParams.imm)).slice(-5) // imm
+    + registerPositionInBinary(inputParams.rs1)! //rs
+    + instructionInfo.decodeInfo!.funct3! // funct3
+    + registerPositionInBinary(inputParams.rd)! // rd
+    + instructionInfo.decodeInfo!.opcode!  // opcode
+  );
+}
+
+function srli_decode(inputParams: InstructionInput): string {
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("SRLI")!;
+  return (
+    "0".repeat(7)
+    + decimalToTwosComplement(Number(inputParams.imm)).slice(-5) // imm
+    + registerPositionInBinary(inputParams.rs1)! //rs
+    + instructionInfo.decodeInfo!.funct3! // funct3
+    + registerPositionInBinary(inputParams.rd)! // rd
+    + instructionInfo.decodeInfo!.opcode!  // opcode
+  );
+}
+
+function srai_decode(inputParams: InstructionInput): string {
+  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("SRLI")!;
+  return (
+    "01" + "0".repeat(5)
+    + decimalToTwosComplement(Number(inputParams.imm)).slice(-5) // imm
+    + registerPositionInBinary(inputParams.rs1)! //rs
+    + instructionInfo.decodeInfo!.funct3! // funct3
+    + registerPositionInBinary(inputParams.rd)! // rd
+    + instructionInfo.decodeInfo!.opcode!  // opcode
+  );
+}
+
+function uTypeDecode(inputParams: InstructionInput, instructionName: string) {
+  return (
+    decimalToTwosComplement(Number(inputParams.imm)).slice(0, 20)
+    + registerPositionInBinary(inputParams.rd)!
+    + INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!.opcode
+  );
+}
+
+function rTypeDecode(inputParams: InstructionInput, instructionName: string): string {
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!;
+  return (
+    decodeInfo.funct7
+    + registerPositionInBinary(inputParams.rs2)!
+    + registerPositionInBinary(inputParams.rs1)!
+    + decodeInfo.funct3
+    + registerPositionInBinary(inputParams.rd)!
+    + decodeInfo.opcode
+  );
+}
+
+/*** Instruction Execution Functions ***/
 function addi(inputParams: InstructionInput): void {
   const binarySum: string = binaryAdd(
     decimalToTwosComplement(inputParams.imm).slice(-12),
@@ -717,13 +699,6 @@ function nop(inputParams: InstructionInput): void {
   inputParams.rs1 = "x0";
   inputParams.imm = 0;
   addi(inputParams);
-}
-
-function nop_decode(inputParams: InstructionInput): string { 
-  inputParams.rd = "x0";
-  inputParams.rs1 = "x0";
-  inputParams.imm = 0;
-  return iTypeDecode(inputParams, "NOP");
 }
 
 function slti(inputParams: InstructionInput): void {
@@ -794,18 +769,6 @@ function slli(inputParams: InstructionInput): void {
   setRegister(inputParams.rd, result);
 }
 
-function slli_decode(inputParams: InstructionInput): string {
-  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("SLLI")!;
-  return (
-    "0".repeat(7)
-    + decimalToTwosComplement(Number(inputParams.imm)).slice(-5) // imm
-    + registerPositionInBinary(inputParams.rs1)! //rs
-    + instructionInfo.decodeInfo!.funct3! // funct3
-    + registerPositionInBinary(inputParams.rd)! // rd
-    + instructionInfo.decodeInfo!.opcode!  // opcode
-  );
-}
-
 function srli(inputParams: InstructionInput): void {
   const immBits: string = decimalToTwosComplement(Number(inputParams.imm)).slice(-5);
   const result: string = (
@@ -813,18 +776,6 @@ function srli(inputParams: InstructionInput): void {
     + registers.get(STRINGS_TO_REGISTERS.get(inputParams.rs1)!)!
   ).slice(0, XLEN);
   setRegister(inputParams.rd, result);
-}
-
-function srli_decode(inputParams: InstructionInput): string {
-  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("SRLI")!;
-  return (
-    "0".repeat(7)
-    + decimalToTwosComplement(Number(inputParams.imm)).slice(-5) // imm
-    + registerPositionInBinary(inputParams.rs1)! //rs
-    + instructionInfo.decodeInfo!.funct3! // funct3
-    + registerPositionInBinary(inputParams.rd)! // rd
-    + instructionInfo.decodeInfo!.opcode!  // opcode
-  );
 }
 
 function srai(inputParams: InstructionInput): void {
@@ -837,26 +788,6 @@ function srai(inputParams: InstructionInput): void {
     result = ("0".repeat(immVal) + sourceBits).slice(0, XLEN);
   }
   setRegister(inputParams.rd, result);
-}
-
-function srai_decode(inputParams: InstructionInput): string {
-  const instructionInfo: InstructionInfo = INSTRUCTION_TO_INFO.get("SRLI")!;
-  return (
-    "01" + "0".repeat(5)
-    + decimalToTwosComplement(Number(inputParams.imm)).slice(-5) // imm
-    + registerPositionInBinary(inputParams.rs1)! //rs
-    + instructionInfo.decodeInfo!.funct3! // funct3
-    + registerPositionInBinary(inputParams.rd)! // rd
-    + instructionInfo.decodeInfo!.opcode!  // opcode
-  );
-}
-
-function uTypeDecode(inputParams: InstructionInput, instructionName: string) {
-  return (
-    decimalToTwosComplement(Number(inputParams.imm)).slice(0, 20)
-    + registerPositionInBinary(inputParams.rd)!
-    + INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!.opcode
-  );
 }
 
 function lui(inputParams: InstructionInput): void {
@@ -873,18 +804,6 @@ function auipc(inputParams: InstructionInput): void {
       decimalToTwosComplement(Number(inputParams.imm)).slice(0, 20) + "0".repeat(12),
       getValueInRegister("pc")!
     )
-  );
-}
-
-function rTypeDecode(inputParams: InstructionInput, instructionName: string): string {
-  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!;
-  return (
-    decodeInfo.funct7
-    + registerPositionInBinary(inputParams.rs2)!
-    + registerPositionInBinary(inputParams.rs1)!
-    + decodeInfo.funct3
-    + registerPositionInBinary(inputParams.rd)!
-    + decodeInfo.opcode
   );
 }
 
