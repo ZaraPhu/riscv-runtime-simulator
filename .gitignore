@@ -11,6 +11,3 @@ coverage
 
 # Editor and OS files
 .DS_STORE
-
-# For wrangler
-.wrangler

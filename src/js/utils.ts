@@ -67,6 +67,7 @@ const PSEUDO_TYPE_B: OperandType[] = [OperandType.IMMEDIATE];
 const PSEUDO_TYPE_C = U_TYPE;
 const J_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.IMMEDIATE];
 const B_TYPE: OperandType[] = [OperandType.REGISTER, OperandType.REGISTER, OperandType.IMMEDIATE];
+const S_TYPE: OperandType[] = I_TYPE;
 
 /**
  * Register System
@@ -442,6 +443,54 @@ const INSTRUCTION_TO_INFO: ReadonlyMap<string, InstructionInfo> = new Map([
     executionFunction: bleu,
     decodeFunction: (inputParams: InstructionInput) => { return bTypeDecode(inputParams, "BLEU"); },
     decodeInfo: { funct3: "111", funct7: undefined, opcode: "1100011" }
+  }],
+  ["LW", {
+    instructionFormat: I_TYPE,
+    executionFunction: lw,
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "LW"); },
+    decodeInfo: { funct3: "010", funct7: undefined, opcode: "0000011" }
+  }],
+  ["LH", {
+    instructionFormat: I_TYPE,
+    executionFunction: lh,
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "LH"); },
+    decodeInfo: { funct3: "001", funct7: undefined, opcode: "0000011" }
+  }],
+  ["LHU", {
+    instructionFormat: I_TYPE,
+    executionFunction: lhu,
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "LHU"); },
+    decodeInfo: { funct3: "101", funct7: undefined, opcode: "0000011" }
+  }],
+  ["LB", {
+    instructionFormat: I_TYPE,
+    executionFunction: lb,
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "LB"); },
+    decodeInfo: { funct3: "000", funct7: undefined, opcode: "0000011" }
+  }],
+  ["LBU", {
+    instructionFormat: I_TYPE,
+    executionFunction: lbu,
+    decodeFunction: (inputParams: InstructionInput) => { return iTypeDecode(inputParams, "LBU"); },
+    decodeInfo: { funct3: "111", funct7: undefined, opcode: "0000011" }
+  }],
+  ["SW", {
+    instructionFormat: S_TYPE,
+    executionFunction: sw,
+    decodeFunction: (inputParams: InstructionInput) => { return sTypeDecode(inputParams, "SW"); },
+    decodeInfo: { funct3: "010", funct7: undefined, opcode: "0100011" },
+  }],
+  ["SH", {
+    instructionFormat: S_TYPE,
+    executionFunction: sh,
+    decodeFunction: (inputParams: InstructionInput) => { return sTypeDecode(inputParams, "SH"); },
+    decodeInfo: { funct3: "001", funct7: undefined, opcode: "0100011" },
+  }],
+  ["SB", {
+    instructionFormat: S_TYPE,
+    executionFunction: sb,
+    decodeFunction: (inputParams: InstructionInput) => { return sTypeDecode(inputParams, "SB"); },
+    decodeInfo: { funct3: "000", funct7: undefined, opcode: "0100011" },
   }]
 ]);
 
@@ -511,7 +560,10 @@ function setRegister(
   extendFunc: Function = signExtend,
 ): void {
   const register: number = STRINGS_TO_REGISTERS.get(rd)!;
-  let valCleaned: string = extendFunc(register == 0 ? "0" : val);
+  let valCleaned: string = (register == 0) ? "0" : val;
+  if (valCleaned.length != 32) {
+    valCleaned = extendFunc(valCleaned);
+  }
   registers.set(register, valCleaned);
   updateRegisterDisplays();
 }
@@ -616,7 +668,7 @@ function mv_decode(inputParams: InstructionInput): string {
   return iTypeDecode(inputParams, "ADDI");
 }
 
-function nop_decode(inputParams: InstructionInput): string { 
+function nop_decode(inputParams: InstructionInput): string {
   inputParams.rd = "x0";
   inputParams.rs1 = "x0";
   inputParams.imm = 0;
@@ -679,7 +731,55 @@ function rTypeDecode(inputParams: InstructionInput, instructionName: string): st
   );
 }
 
+function jal_decode(inputParams: InstructionInput): string {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-20);
+  const decodeInfo: InstructionDecodeInfo =
+    INSTRUCTION_TO_INFO.get("JAL")!.decodeInfo!;
+  return (
+    immBin.charAt(19)
+    + immBin.slice(0, 9)
+    + immBin.charAt(10)
+    + immBin.slice(11, 18)
+    + getValueInRegister(inputParams.rd)!
+    + decodeInfo.opcode
+  );
+}
+
+function j_decode(inputParams: InstructionInput): string {
+  inputParams.rd = "x0";
+  return jal_decode(inputParams);
+}
+
+function bTypeDecode(inputParams: InstructionInput, instructionName: string): string {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!;
+  return (
+    immBin.charAt(0)
+    + immBin.slice(2, 7)
+    + registerPositionInBinary(inputParams.rs2)!
+    + registerPositionInBinary(inputParams.rs1)!
+    + decodeInfo.funct3!
+    + immBin.slice(7, 11)
+    + immBin.charAt(1)
+    + decodeInfo.opcode
+  );
+}
+
+function sTypeDecode(inputParams: InstructionInput, instructionName: string): string {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!;
+  return (
+    immBin.slice(0, 7)
+    + registerPositionInBinary(inputParams.rs2)!
+    + registerPositionInBinary(inputParams.rs1)!
+    + decodeInfo.funct3!
+    + immBin.slice(7)
+    + decodeInfo.opcode!
+  );
+}
+
 /*** Instruction Execution Functions ***/
+
 function addi(inputParams: InstructionInput): void {
   const binarySum: string = binaryAdd(
     decimalToTwosComplement(inputParams.imm).slice(-12),
@@ -945,28 +1045,9 @@ function jal(inputParams: InstructionInput): void {
   );
 }
 
-function jal_decode(inputParams: InstructionInput): string {
-  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-20);
-  const decodeInfo: InstructionDecodeInfo =
-    INSTRUCTION_TO_INFO.get("JAL")!.decodeInfo!;
-  return (
-    immBin.charAt(19)
-    + immBin.slice(0, 9)
-    + immBin.charAt(10)
-    + immBin.slice(11, 18)
-    + getValueInRegister(inputParams.rd)!
-    + decodeInfo.opcode
-  );
-}
-
 function j(inputParams: InstructionInput): void {
   inputParams.rd = "x0";
   jal(inputParams);
-}
-
-function j_decode(inputParams: InstructionInput): string {
-  inputParams.rd = "x0";
-  return jal_decode(inputParams);
 }
 
 
@@ -988,21 +1069,6 @@ function jalr(inputParams: InstructionInput): void {
       "100",
       zeroExtend,
     ),
-  );
-}
-
-function bTypeDecode(inputParams: InstructionInput, instructionName: string): string {
-  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
-  const decodeInfo: InstructionDecodeInfo = INSTRUCTION_TO_INFO.get(instructionName)!.decodeInfo!;
-  return (
-    immBin.charAt(11)
-    + immBin.slice(4, 10).split("").reverse().join("")
-    + registerPositionInBinary(inputParams.rs2)!
-    + registerPositionInBinary(inputParams.rs1)!
-    + decodeInfo.funct3!
-    + immBin.slice(0, 4).split("").reverse().join("")
-    + immBin.charAt(10)
-    + decodeInfo.opcode
   );
 }
 
@@ -1140,7 +1206,7 @@ function bgez(inputParams: InstructionInput): void {
 }
 
 function bgeu(inputParams: InstructionInput): void {
-  const immBin: string = decimalToTwosComplement(inputParams.imm, 12);
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
   if (
     parseInt(inputParams.rs1, Base.BINARY)
     >= parseInt(inputParams.rs2, Base.BINARY)
@@ -1160,4 +1226,89 @@ function bleu(inputParams: InstructionInput): void {
   inputParams.rs1 = inputParams.rs2;
   inputParams.rs2 = temp;
   bgeu(inputParams);
+}
+
+function lw(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  setRegister(
+    inputParams.rd,
+    memory.get(
+      parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY)
+      + twosComplementToDecimal(immBin)
+    )!
+  );
+}
+
+function lh(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  setRegister(
+    inputParams.rd,
+    memory.get(
+      parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY)
+      + twosComplementToDecimal(immBin)
+    )!.slice(-16),
+    signExtend
+  );
+}
+
+function lhu(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  setRegister(
+    inputParams.rd,
+    memory.get(
+      parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY)
+      + twosComplementToDecimal(immBin)
+    )!.slice(-16),
+    zeroExtend
+  );
+}
+
+function lb(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  setRegister(
+    inputParams.rd,
+    memory.get(
+      parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY)
+      + twosComplementToDecimal(immBin)
+    )!.slice(-8),
+    signExtend
+  );
+}
+
+function lbu(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  setRegister(
+    inputParams.rd,
+    memory.get(
+      parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY)
+      + twosComplementToDecimal(immBin)
+    )!.slice(-8),
+    zeroExtend
+  );
+}
+
+function sw(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  memory.set(
+    parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY) + twosComplementToDecimal(immBin),
+    getValueInRegister(inputParams.rs2)!
+  );
+}
+
+function sh(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  memory.set(
+    parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY) + twosComplementToDecimal(immBin),
+    memory.get(parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY) + twosComplementToDecimal(immBin))!.slice(0, 16)
+      + getValueInRegister(inputParams.rs2)!.slice(-16)
+  );
+}
+
+function sb(inputParams: InstructionInput): void {
+  const immBin: string = decimalToTwosComplement(inputParams.imm).slice(-12);
+  memory.set(
+    parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY) + twosComplementToDecimal(immBin),
+    memory.get(parseInt(getValueInRegister(inputParams.rs1)!, Base.BINARY) + twosComplementToDecimal(immBin))!.slice(0, 24)
+      + getValueInRegister(inputParams.rs2)!.slice(-8)
+  );
 }
