@@ -1,7 +1,7 @@
 /*
 This file is used to hold the helper functions for the runtime simulator script.
 It also holds important constants which are used in the runtime simulator.
-Author: Zara Phukan.
+Author: Anjali Phukan.
 Creation Date: April 15, 2025.
 */
 

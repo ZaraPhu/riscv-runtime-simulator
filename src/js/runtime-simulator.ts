@@ -3,7 +3,7 @@ The purpose of this file is to implement the RISC-V runtime simulator.
 It will be used to simulate the execution of RISC-V instructions which are
 retrieved from the assembly editor textarea and update the state of the
 execution environment.
-Author: Zara Phukan.
+Author: AnjaliPhukan. 
 Creation Date: April 3, 2025.
 */
 
