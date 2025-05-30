@@ -1,109 +1,74 @@
 /*** ADDI ***/
-# Test basic ADDI operation
-ADDI x1, x0, 5
-ADDI x2, x0, 10
-ADDI x3, x1, 3
+# Test 1: Basic Functionality
+ADDI x1, x0, 5      # expected: x1 = 5
+ADDI x2, x0, 10     # expected: x2 = 10
+ADDI x3, x1, 3      # expected: x3 = 8
 
-# Test ADDI with negative immediate
-ADDI x1, x0, 10
-ADDI x2, x1, -5
+# Test 2: Immediate Negative
+ADDI x1, x0, 10     # expected: x1 = 10
+ADDI x2, x1, -5     # expected: x2 = 5  
 
-# Test ADDI with zero immediate
-ADDI x1, x0, 20
-ADDI x2, x1, 0
+# Test 3: Zero Immediate
+ADDI x1, x0, 20     # expected: x1 = 20
+ADDI x2, x1, 0      # expected: x2 = 0
 
-# Test ADDI with maximum positive immediate
-ADDI x1, x0, 2047
+# Test 4: Maximum Positive Immediate
+ADDI x1, x0, 2047   # expected: x1 = 2047
 
-# Test ADDI with minimum negative immediate
-ADDI x1, x0, -2048
+# Test 5: Minimum Negative Immediate
+ADDI x1, x0, -2048  # expected: x1 = -2048
 
-# Test ADDI that overflows
-ADDI x1, x0, 2047
-ADDI x2, x1, 10
+# Test 6: Does not mutate x0 register
+ADDI x0, x0, 5      # expected: x0 = 0
 
 /*** MV ***/
-# Test MV basic operation
-ADDI x1, x0, 42
-MV x2, x1
-MV x3, x2
+# Test 1: Basic Functionality
+ADDI x1, x0, 42     # expected: x1 = 42
+MV x2, x1           # expected: x2 = 42
+MV x3, x2           # expected: x4 = 42
 
-# Test MV with register zero as source
-MV x1, x0
+# Test 2: x0 as Source Register
+MV x1, x0           # expected: x1 = 0
 
-# Test MV followed by ADDI
-ADDI x1, x0, 15
-MV x2, x1
-ADDI x2, x2, 5
-
-# Test chain of operations
-ADDI x1, x0, 10
-ADDI x2, x0, 20
-MV x3, x1
-MV x4, x2
-ADDI x5, x3, 5
-ADDI x6, x4, -5
-MV x7, x5
-MV x8, x6
-
-# Test writing to x0 (should remain 0)
-ADDI x1, x0, 42
-MV x0, x1
-ADDI x2, x0, 10
+# Test 3: Does not mutate x0 register
+ADDI x1, x0, 42     # expected: x1 = 42
+MV x0, x1           # expected: x0 = 0
 
 /*** NOP ***/
-# Test basic NOP operation
-NOP
-NOP
-NOP
+# Test 1: Basic Functionality
+NOP                 # expected: pc = 4
+NOP                 # expected: pc = 8
+NOP                 # expected: pc = 12
 
-# Test NOP between instructions
-ADDI x1, x0, 5
-NOP
-ADDI x2, x0, 10
+# Test 2: Between instructions
+ADDI x1, x0, 1      # expected: x1 = 1
+NOP                 # expected: pc = 8
+ADDI x2, x0, 2      # expected: x2 = 2
+NOP                 # expected: pc = 16
+ADDI x3, x0, 3      # expected: x3 = 3
 
-# Test multiple NOPs in sequence
-ADDI x1, x0, 15
-NOP
-NOP
-NOP
-ADDI x2, x0, 25
+/** SLTI ***/
+# Test 1: Positive Immediates
+ADDI x1, x0, 10     # expected: x1 = 10
+SLTI x2, x1, 15     # expected: x2 = 1
+SLTI x3, x1, 5      # expected: x3 = 0
+SLTI x4, x1, 10     # expected: x4 = 0
 
-# Test NOP with program counter
-ADDI x1, x0, 1
-NOP
-ADDI x2, x0, 2
-NOP
-ADDI x3, x0, 3
+# Test 2: Negative Immediates
+ADDI x1, x0, -10    # expected: x1 = -10
+SLTI x2, x1, 5      # expected: x2 = 1
+SLTI x3, x1, -5     # expected: x3 = 1
+SLTI x4, x1, -15    # expected: x4 = 0
 
-# Test NOP in mixed instruction sequence
-ADDI x1, x0, 10
-NOP
-MV x2, x1
-NOP
-ADDI x3, x2, 5
+/*** SLTIU ***/
+# Test 1: Positive Immediates
+ADDI x1, x0, 10     # expected: x1 = 10
+SLTIU x2, x1, 15    # expected: x2 = 1
+SLTIU x3, x1, 5     # expected: x3 = 0
+SLTIU x4, x1, 10    # expected: x4 = 0
 
-/** SLTI/SLTIU ***/
-# Test SLTI basic operation (signed comparison)
-ADDI x1, x0, 10
-SLTI x2, x1, 15  
-SLTI x3, x1, 5 
-SLTI x4, x1, 10
-
-# Test SLTI with negative values
-ADDI x1, x0, -10
-SLTI x2, x1, 5   
-SLTI x3, x1, -5  
-SLTI x4, x1, -15 
-
-# Test SLTIU basic operation (unsigned comparison)
-ADDI x1, x0, 10
-SLTIU x2, x1, 15  
-SLTIU x3, x1, 5   
-SLTIU x4, x1, 10  
-
-# Test SLTIU with "negative" values (treated as large unsigned)
-ADDI x1, x0, 10
+# Test 2: "Negative" Immediates
+ADDI x1, x0, 10     # expected: x1
 SLTIU x2, x1, -1 
 ADDI x3, x0, -5
 SLTIU x4, x3, 10
@@ -136,3 +101,13 @@ SLTI x3, x1, 50     # 100 < 50, x3 should be 0
 SLTI x4, x2, 50     # -100 < 50, x4 should be 1
 SLTIU x5, x1, 50    # 100 > 50, x5 should be 0
 SLTIU x6, x2, 50    # (2^32-100) > 50, x6 should be 0
+
+/*** SEQZ ***/
+# Test basic SEQZ operation
+ADDI x1, x0, 0      # x1 = 0
+SEQZ x2, x1         # x1 == 0, x2 should be 1
+ADDI x3, x0, 10     # x3 = 10
+SEQZ x4, x3         # x3 != 0, x4 should be 0
+
+# Test SEQZ with x0 register
+SEQZ x1, x0         # x0 is always 0, x1 should be 1

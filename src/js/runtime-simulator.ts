@@ -64,6 +64,9 @@ function parseInput(instructionList: string[]): ParserResult {
     destructuredInstruction = destructuredInstruction.filter(
       (element) => !(element === " ") && !(element === "")
     );
+    let commentIndex: number = destructuredInstruction.findIndex((element: string) => { return element === "#";  });
+    if (commentIndex >= 0) { destructuredInstruction = destructuredInstruction.slice(0, commentIndex); }
+    
     // If the instruction is empty (after splitting), mark as error
     if (destructuredInstruction.length == 0) {
       appendParsingError(parsingResult, `Line ${i + 1}: Empty instruction.\n`);
